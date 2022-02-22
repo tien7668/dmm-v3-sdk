@@ -1,16 +1,14 @@
-export declare const FACTORY_ADDRESS = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
+export declare const FACTORY_ADDRESS = "0x0C7369F931a8D809E443c1d4A5DCe663fF888a73";
 export declare const ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";
-export declare const POOL_INIT_CODE_HASH = "0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54";
+export declare const POOL_INIT_CODE_HASH = "0xd71790a46dff0e075392efbd706356cd5a822a782f46e9859829440065879f81";
 /**
  * The default factory enabled fee amounts, denominated in hundredths of bips.
  */
 export declare enum FeeAmount {
-    LOWEST = 100,
-    LOW = 500,
-    MEDIUM = 3000,
-    HIGH = 10000,
-    KYBER_LOW = 5,
-    KYBER_MEDIUM = 30
+    LOWEST = 1,
+    LOW = 5,
+    MEDIUM = 30,
+    HIGH = 100
 }
 /**
  * The default factory tick spacings by fee amount.
@@ -18,3 +16,4 @@ export declare enum FeeAmount {
 export declare const TICK_SPACINGS: {
     [amount in FeeAmount]: number;
 };
+export declare const MIN_LIQUIDITY = 100000;

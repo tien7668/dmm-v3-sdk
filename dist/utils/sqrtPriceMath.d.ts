@@ -5,6 +5,8 @@ export declare abstract class SqrtPriceMath {
      * Cannot be constructed.
      */
     private constructor();
+    static getAmount0Unlock(sqrtRatioInitX96: JSBI): JSBI;
+    static getAmount1Unlock(sqrtRatioInitX96: JSBI): JSBI;
     static getAmount0Delta(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquidity: JSBI, roundUp: boolean): JSBI;
     static getAmount0DeltaFeeCompounding(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquidity: JSBI, feePips: FeeAmount, roundUp: boolean): [JSBI, JSBI];
     static getAmount1Delta(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquidity: JSBI, roundUp: boolean): JSBI;

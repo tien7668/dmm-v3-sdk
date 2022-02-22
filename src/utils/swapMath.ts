@@ -4,7 +4,7 @@ import { NEGATIVE_ONE, ZERO } from '../internalConstants'
 import { FullMath } from './fullMath'
 import { SqrtPriceMath } from './sqrtPriceMath'
 
-const MAX_FEE = JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(6))
+const MAX_FEE = JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(4))
 
 export abstract class SwapMath {
   /**
@@ -44,12 +44,7 @@ export abstract class SwapMath {
       returnValues.amountIn = zeroForOne
         ? SqrtPriceMath.getAmount0Delta(sqrtRatioTargetX96, sqrtRatioCurrentX96, liquidity, true)
         : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, true)
-      console.log(
-        '====computeSwapStep',
-        amountRemainingLessFee,
-        returnValues.amountIn.toString(),
-        JSBI.greaterThanOrEqual(amountRemainingLessFee, returnValues.amountIn!)
-      )
+
       if (JSBI.greaterThanOrEqual(amountRemainingLessFee, returnValues.amountIn!)) {
         returnValues.sqrtRatioNextX96 = sqrtRatioTargetX96
       } else {
@@ -62,7 +57,6 @@ export abstract class SwapMath {
           amountRemainingLessFee,
           zeroForOne
         )
-        console.log('====computeSwapStep sqrtRatioNextX96', returnValues.sqrtRatioNextX96.toString())
       }
     } else {
       // exactOut
@@ -109,11 +103,6 @@ export abstract class SwapMath {
         max && !exactIn
           ? returnValues.amountOut
           : SqrtPriceMath.getAmount0Delta(sqrtRatioCurrentX96, returnValues.sqrtRatioNextX96, liquidity, false)
-      console.log(
-        '====computeSwapStep amountIn/amountOut recalculated',
-        returnValues.amountOut?.toString(),
-        SqrtPriceMath.getAmount0Delta(sqrtRatioCurrentX96, returnValues.sqrtRatioNextX96, liquidity, false).toString()
-      )
     }
 
     if (!exactIn && JSBI.greaterThan(returnValues.amountOut!, JSBI.multiply(amountRemaining, NEGATIVE_ONE))) {

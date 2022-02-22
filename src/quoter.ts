@@ -2,7 +2,7 @@ import { Interface } from '@ethersproject/abi'
 import { BigintIsh, Currency, CurrencyAmount, TradeType } from '@vutien/sdk-core'
 import { encodeRouteToPath } from './utils'
 import { MethodParameters, toHex } from './utils/calldata'
-import { abi } from './abis/Quoter.json'
+import { abi } from './abis/IProAmmQuoter.json'
 import { Route } from './entities'
 import invariant from 'tiny-invariant'
 
@@ -45,19 +45,23 @@ export abstract class SwapQuoter {
     if (singleHop) {
       if (tradeType === TradeType.EXACT_INPUT) {
         calldata = SwapQuoter.INTERFACE.encodeFunctionData(`quoteExactInputSingle`, [
-          route.tokenPath[0].address,
-          route.tokenPath[1].address,
-          route.pools[0].fee,
-          quoteAmount,
-          toHex(options?.sqrtPriceLimitX96 ?? 0)
+          [
+            route.tokenPath[0].address,
+            route.tokenPath[1].address,
+            quoteAmount,
+            route.pools[0].fee,
+            toHex(options?.sqrtPriceLimitX96 ?? 0)
+          ]
         ])
       } else {
         calldata = SwapQuoter.INTERFACE.encodeFunctionData(`quoteExactOutputSingle`, [
-          route.tokenPath[0].address,
-          route.tokenPath[1].address,
-          route.pools[0].fee,
-          quoteAmount,
-          toHex(options?.sqrtPriceLimitX96 ?? 0)
+          [
+            route.tokenPath[0].address,
+            route.tokenPath[1].address,
+            quoteAmount,
+            route.pools[0].fee,
+            toHex(options?.sqrtPriceLimitX96 ?? 0)
+          ]
         ])
       }
     } else {

@@ -64,7 +64,7 @@ export class Pool {
     tickCurrent: number,
     ticks: TickDataProvider | (Tick | TickConstructorArgs)[] = NO_TICK_DATA_PROVIDER_DEFAULT
   ) {
-    invariant(Number.isInteger(fee) && fee < 1_000_000, 'FEE')
+    invariant(Number.isInteger(fee) && fee < 10000, 'FEE')
 
     const tickCurrentSqrtRatioX96 = TickMath.getSqrtRatioAtTick(tickCurrent)
     const nextTickSqrtRatioX96 = TickMath.getSqrtRatioAtTick(tickCurrent + 1)
@@ -263,8 +263,6 @@ export class Pool {
       }
 
       step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext)
-
-      console.log('====tick', step.tickNext, step.sqrtPriceNextX96)
       ;[state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount] = SwapMath.computeSwapStep(
         state.sqrtPriceX96,
         (zeroForOne
@@ -276,7 +274,6 @@ export class Pool {
         state.amountSpecifiedRemaining,
         this.fee
       )
-      console.log('====amountOut', step.amountOut, step.sqrtPriceNextX96.toString())
       if (exactInput) {
         state.amountSpecifiedRemaining = JSBI.subtract(
           state.amountSpecifiedRemaining,
@@ -287,7 +284,6 @@ export class Pool {
         state.amountSpecifiedRemaining = JSBI.add(state.amountSpecifiedRemaining, step.amountOut)
         state.amountCalculated = JSBI.add(state.amountCalculated, JSBI.add(step.amountIn, step.feeAmount))
       }
-      console.log('====amountOut', step.amountOut, step.amountIn, step.feeAmount, state.amountSpecifiedRemaining)
 
       // TODO
       if (JSBI.equal(state.sqrtPriceX96, step.sqrtPriceNextX96)) {

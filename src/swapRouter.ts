@@ -6,7 +6,7 @@ import { ADDRESS_ZERO } from './constants'
 import { PermitOptions, SelfPermit } from './selfPermit'
 import { encodeRouteToPath } from './utils'
 import { MethodParameters, toHex } from './utils/calldata'
-import { abi } from './abis/SwapRouter.json'
+import { abi } from './abis/IProAmmRouter.json'
 import { Multicall } from './multicall'
 import { FeeOptions, Payments } from './payments'
 
@@ -123,11 +123,11 @@ export abstract class SwapRouter {
               recipient: routerMustCustody ? ADDRESS_ZERO : recipient,
               deadline,
               amountIn,
-              amountOutMinimum: amountOut,
-              sqrtPriceLimitX96: toHex(options.sqrtPriceLimitX96 ?? 0)
+              minAmountOut: amountOut,
+              limitSqrtP: toHex(options.sqrtPriceLimitX96 ?? 0)
             }
 
-            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactInputSingle', [exactInputSingleParams]))
+            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactInputSingle', [exactInputSingleParams]))
           } else {
             const exactOutputSingleParams = {
               tokenIn: route.tokenPath[0].address,
@@ -136,11 +136,11 @@ export abstract class SwapRouter {
               recipient: routerMustCustody ? ADDRESS_ZERO : recipient,
               deadline,
               amountOut,
-              amountInMaximum: amountIn,
-              sqrtPriceLimitX96: toHex(options.sqrtPriceLimitX96 ?? 0)
+              maxAmountIn: amountIn,
+              limitSqrtP: toHex(options.sqrtPriceLimitX96 ?? 0)
             }
 
-            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactOutputSingle', [exactOutputSingleParams]))
+            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactOutputSingle', [exactOutputSingleParams]))
           }
         } else {
           invariant(options.sqrtPriceLimitX96 === undefined, 'MULTIHOP_PRICE_LIMIT')
@@ -153,20 +153,20 @@ export abstract class SwapRouter {
               recipient: routerMustCustody ? ADDRESS_ZERO : recipient,
               deadline,
               amountIn,
-              amountOutMinimum: amountOut
+              minAmountOut: amountOut
             }
 
-            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactInput', [exactInputParams]))
+            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactInput', [exactInputParams]))
           } else {
             const exactOutputParams = {
               path,
               recipient: routerMustCustody ? ADDRESS_ZERO : recipient,
               deadline,
               amountOut,
-              amountInMaximum: amountIn
+              maxAmountIn: amountIn
             }
 
-            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactOutput', [exactOutputParams]))
+            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactOutput', [exactOutputParams]))
           }
         }
       }

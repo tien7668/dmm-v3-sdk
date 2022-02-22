@@ -75,6 +75,7 @@ export interface CollectOptions {
      * The account that should receive the tokens.
      */
     recipient: string;
+    deadline: BigintIsh;
 }
 export interface NFTPermitOptions {
     v: 0 | 1 | 27 | 28;
@@ -111,10 +112,6 @@ export interface RemoveLiquidityOptions {
      * The optional permit of the token ID being exited, in case the exit transaction is being sent by an account that does not own the NFT
      */
     permit?: NFTPermitOptions;
-    /**
-     * Parameters to be passed on to collect
-     */
-    collectOptions: Omit<CollectOptions, 'tokenId'>;
 }
 export declare abstract class NonfungiblePositionManager {
     static INTERFACE: Interface;

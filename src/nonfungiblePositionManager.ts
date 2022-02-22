@@ -19,6 +19,7 @@ import { Pool } from 'entities/pool'
 import { Payments } from './payments'
 import { Multicall } from './multicall'
 import { ADDRESS_ZERO } from './constants'
+import { SqrtPriceMath } from '.'
 
 const MaxUint128 = toHex(JSBI.subtract(JSBI.exponentiate(JSBI.BigInt(2), JSBI.BigInt(128)), JSBI.BigInt(1)))
 
@@ -122,6 +123,8 @@ export interface CollectOptions {
    * The account that should receive the tokens.
    */
   recipient: string
+
+  deadline: BigintIsh
 }
 
 export interface NFTPermitOptions {
@@ -168,7 +171,7 @@ export interface RemoveLiquidityOptions {
   /**
    * Parameters to be passed on to collect
    */
-  collectOptions: Omit<CollectOptions, 'tokenId'>
+  // collectOptions: Omit<CollectOptions, 'tokenId'>
 }
 
 export abstract class NonfungiblePositionManager {
@@ -270,11 +273,18 @@ export abstract class NonfungiblePositionManager {
       invariant(position.pool.token0.equals(wrapped) || position.pool.token1.equals(wrapped), 'NO_WETH')
 
       const wrappedValue = position.pool.token0.equals(wrapped) ? amount0Desired : amount1Desired
+
       // we only need to refund if we're actually sending ETH
       if (JSBI.greaterThan(wrappedValue, ZERO)) {
         calldatas.push(Payments.encodeRefundETH())
       }
-      value = toHex(wrappedValue)
+
+      if (isMint(options) && options.createPool) {
+        const ethUnlock = position.pool.token0.equals(wrapped)
+          ? SqrtPriceMath.getAmount0Unlock(position.pool.sqrtRatioX96)
+          : SqrtPriceMath.getAmount1Unlock(position.pool.sqrtRatioX96)
+        value = toHex(JSBI.add(wrappedValue, ethUnlock))
+      } else value = toHex(wrappedValue)
     }
     return {
       calldata: Multicall.encodeMulticall(calldatas),
@@ -363,37 +373,70 @@ export abstract class NonfungiblePositionManager {
 
     const tokenId = toHex(options.tokenId)
 
-    const involvesETH =
-      options.expectedCurrencyOwed0.currency.isNative || options.expectedCurrencyOwed1.currency.isNative
+    // const involvesETH =
+    // options.expectedCurrencyOwed0.currency.isNative || options.expectedCurrencyOwed1.currency.isNative
 
     const recipient = validateAndParseAddress(options.recipient)
 
-    // collect
+    const deadline = toHex(options.deadline)
+
+    //remove a small amount to update the RTokens
     calldatas.push(
-      NonfungiblePositionManager.INTERFACE.encodeFunctionData('collect', [
+      NonfungiblePositionManager.INTERFACE.encodeFunctionData('removeLiquidity', [
         {
           tokenId,
-          recipient: involvesETH ? ADDRESS_ZERO : recipient,
+          liquidity: '0x1',
           amount0Min: 0,
-          amount1Min: 0
+          amount1Min: 0,
+          deadline
         }
       ])
     )
 
-    if (involvesETH) {
-      const ethAmount = options.expectedCurrencyOwed0.currency.isNative
-        ? options.expectedCurrencyOwed0.quotient
-        : options.expectedCurrencyOwed1.quotient
-      const token = options.expectedCurrencyOwed0.currency.isNative
-        ? (options.expectedCurrencyOwed1.currency as Token)
-        : (options.expectedCurrencyOwed0.currency as Token)
-      const tokenAmount = options.expectedCurrencyOwed0.currency.isNative
-        ? options.expectedCurrencyOwed1.quotient
-        : options.expectedCurrencyOwed0.quotient
+    // collect
+    calldatas.push(
+      NonfungiblePositionManager.INTERFACE.encodeFunctionData('burnRTokens', [
+        {
+          tokenId,
+          amount0Min: 0,
+          amount1Min: 0,
+          deadline
+        }
+      ])
+    )
 
-      calldatas.push(Payments.encodeUnwrapWETH(ethAmount, recipient))
-      calldatas.push(Payments.encodeSweepToken(token, tokenAmount, recipient))
+    const token0IsNative = options.expectedCurrencyOwed0.currency.isNative
+    const token1IsNative = options.expectedCurrencyOwed1.currency.isNative
+    const token0Amount = options.expectedCurrencyOwed0.quotient
+    const token1Amount = options.expectedCurrencyOwed1.quotient
+
+    if (token0IsNative) {
+      calldatas.push(Payments.encodeUnwrapWETH(token0Amount, recipient))
+    } else {
+      const token = options.expectedCurrencyOwed0.currency as Token
+      calldatas.push(Payments.encodeSweepToken(token, token0Amount, recipient))
     }
+    if (token1IsNative) {
+      calldatas.push(Payments.encodeUnwrapWETH(token1Amount, recipient))
+    } else {
+      const token = options.expectedCurrencyOwed1.currency as Token
+      calldatas.push(Payments.encodeSweepToken(token, token1Amount, recipient))
+    }
+
+    // if (involvesETH) {
+    //   const ethAmount = options.expectedCurrencyOwed0.currency.isNative
+    //     ? options.expectedCurrencyOwed0.quotient
+    //     : options.expectedCurrencyOwed1.quotient
+    //   const token = options.expectedCurrencyOwed0.currency.isNative
+    //     ? (options.expectedCurrencyOwed1.currency as Token)
+    //     : (options.expectedCurrencyOwed0.currency as Token)
+    //   const tokenAmount = options.expectedCurrencyOwed0.currency.isNative
+    //     ? options.expectedCurrencyOwed1.quotient
+    //     : options.expectedCurrencyOwed0.quotient
+
+    //   calldatas.push(Payments.encodeUnwrapWETH(ethAmount, recipient))
+    //   calldatas.push(Payments.encodeSweepToken(token, tokenAmount, recipient))
+    // }
 
     return calldatas
   }
@@ -417,7 +460,7 @@ export abstract class NonfungiblePositionManager {
 
     const deadline = toHex(options.deadline)
     const tokenId = toHex(options.tokenId)
-
+    console.log(position)
     // construct a partial position with a percentage of liquidity
     const partialPosition = new Position({
       pool: position.pool,

@@ -14,19 +14,6 @@ export abstract class Multicall {
     if (!Array.isArray(calldatas)) {
       calldatas = [calldatas]
     }
-    console.log(
-      Multicall.INTERFACE.encodeFunctionData('multicall', [
-        ['0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa']
-      ])
-    )
-    console.log(
-      Multicall.INTERFACE.encodeFunctionData('multicall', [
-        [
-          '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-          '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
-        ]
-      ])
-    )
     return calldatas.length === 1 ? calldatas[0] : Multicall.INTERFACE.encodeFunctionData('multicall', [calldatas])
   }
 }

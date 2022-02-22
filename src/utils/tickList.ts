@@ -113,8 +113,6 @@ export abstract class TickList {
       if (TickList.isBelowSmallest(ticks, tick)) {
         return [minimum, false]
       }
-      console.log('=====TickList.nextInitializedTick', ticks, tick, lte)
-
       const index = TickList.nextInitializedTick(ticks, tick, lte).index
       const nextInitializedTick = Math.max(minimum, index)
       return [nextInitializedTick, nextInitializedTick === index]
@@ -129,9 +127,6 @@ export abstract class TickList {
       const index = this.nextInitializedTick(ticks, tick, lte).index
       const nextInitializedTick = Math.min(maximum, index)
 
-      console.log('=====TickList.nextInitializedTick 1', ticks, tick, lte)
-
-      console.log('=====TickList.nextInitializedTick 2', index, maximum)
       return [nextInitializedTick, nextInitializedTick === index]
     }
   }

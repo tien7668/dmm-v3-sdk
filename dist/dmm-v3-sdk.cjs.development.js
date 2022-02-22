@@ -885,24 +885,23 @@ try {
 
 var _TICK_SPACINGS;
 
-var FACTORY_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
+var FACTORY_ADDRESS = '0x0C7369F931a8D809E443c1d4A5DCe663fF888a73';
 var ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
-var POOL_INIT_CODE_HASH = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54';
+var POOL_INIT_CODE_HASH = '0xd71790a46dff0e075392efbd706356cd5a822a782f46e9859829440065879f81';
 
 (function (FeeAmount) {
-  FeeAmount[FeeAmount["LOWEST"] = 100] = "LOWEST";
-  FeeAmount[FeeAmount["LOW"] = 500] = "LOW";
-  FeeAmount[FeeAmount["MEDIUM"] = 3000] = "MEDIUM";
-  FeeAmount[FeeAmount["HIGH"] = 10000] = "HIGH";
-  FeeAmount[FeeAmount["KYBER_LOW"] = 5] = "KYBER_LOW";
-  FeeAmount[FeeAmount["KYBER_MEDIUM"] = 30] = "KYBER_MEDIUM";
+  FeeAmount[FeeAmount["LOWEST"] = 1] = "LOWEST";
+  FeeAmount[FeeAmount["LOW"] = 5] = "LOW";
+  FeeAmount[FeeAmount["MEDIUM"] = 30] = "MEDIUM";
+  FeeAmount[FeeAmount["HIGH"] = 100] = "HIGH";
 })(exports.FeeAmount || (exports.FeeAmount = {}));
 /**
  * The default factory tick spacings by fee amount.
  */
 
 
-var TICK_SPACINGS = (_TICK_SPACINGS = {}, _TICK_SPACINGS[exports.FeeAmount.LOWEST] = 1, _TICK_SPACINGS[exports.FeeAmount.LOW] = 10, _TICK_SPACINGS[exports.FeeAmount.MEDIUM] = 60, _TICK_SPACINGS[exports.FeeAmount.HIGH] = 200, _TICK_SPACINGS[exports.FeeAmount.KYBER_LOW] = 10, _TICK_SPACINGS[exports.FeeAmount.KYBER_MEDIUM] = 60, _TICK_SPACINGS);
+var TICK_SPACINGS = (_TICK_SPACINGS = {}, _TICK_SPACINGS[exports.FeeAmount.LOWEST] = 1, _TICK_SPACINGS[exports.FeeAmount.LOW] = 10, _TICK_SPACINGS[exports.FeeAmount.MEDIUM] = 60, _TICK_SPACINGS[exports.FeeAmount.HIGH] = 200, _TICK_SPACINGS);
+var MIN_LIQUIDITY = 100000;
 
 /**
  * Computes a pool address
@@ -1241,7 +1240,6 @@ var TickList = /*#__PURE__*/function () {
         return [minimum, false];
       }
 
-      console.log('=====TickList.nextInitializedTick', ticks, tick, lte);
       var index = TickList.nextInitializedTick(ticks, tick, lte).index;
       var nextInitializedTick = Math.max(minimum, index);
       return [nextInitializedTick, nextInitializedTick === index];
@@ -1258,8 +1256,6 @@ var TickList = /*#__PURE__*/function () {
 
       var _nextInitializedTick = Math.min(maximum, _index2);
 
-      console.log('=====TickList.nextInitializedTick 1', ticks, tick, lte);
-      console.log('=====TickList.nextInitializedTick 2', _index2, maximum);
       return [_nextInitializedTick, _nextInitializedTick === _index2];
     }
   };
@@ -1517,7 +1513,7 @@ function priceToClosestTick(price) {
 }
 
 var MaxUint160 = /*#__PURE__*/JSBI.subtract( /*#__PURE__*/JSBI.exponentiate( /*#__PURE__*/JSBI.BigInt(2), /*#__PURE__*/JSBI.BigInt(160)), ONE);
-var MAX_FEE = /*#__PURE__*/JSBI.exponentiate( /*#__PURE__*/JSBI.BigInt(10), /*#__PURE__*/JSBI.BigInt(6));
+var MAX_FEE = /*#__PURE__*/JSBI.exponentiate( /*#__PURE__*/JSBI.BigInt(10), /*#__PURE__*/JSBI.BigInt(4));
 
 function multiplyIn256(x, y) {
   var product = JSBI.multiply(x, y);
@@ -1533,10 +1529,18 @@ var SqrtPriceMath = /*#__PURE__*/function () {
   /**
    * Cannot be constructed.
    */
-  function SqrtPriceMath() {} //L value = encodeSqrt = X96
+  function SqrtPriceMath() {}
+
+  SqrtPriceMath.getAmount0Unlock = function getAmount0Unlock(sqrtRatioInitX96) {
+    return FullMath.mulDivRoundingUp(JSBI.BigInt(MIN_LIQUIDITY), Q96, sqrtRatioInitX96);
+  };
+
+  SqrtPriceMath.getAmount1Unlock = function getAmount1Unlock(sqrtRatioInitX96) {
+    return FullMath.mulDivRoundingUp(JSBI.BigInt(MIN_LIQUIDITY), sqrtRatioInitX96, Q96);
+  } //L value = encodeSqrt = X96
   //Come from equation
   // (x + L/sqrt(Pb)).(y + L.sqrt(Pa)) = L^2
-
+  ;
 
   SqrtPriceMath.getAmount0Delta = function getAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity, roundUp) {
     //getAmount0Delta equivalent when y= 0
@@ -1749,7 +1753,7 @@ var TickListDataProvider = /*#__PURE__*/function () {
   return TickListDataProvider;
 }();
 
-var MAX_FEE$1 = /*#__PURE__*/JSBI.exponentiate( /*#__PURE__*/JSBI.BigInt(10), /*#__PURE__*/JSBI.BigInt(6));
+var MAX_FEE$1 = /*#__PURE__*/JSBI.exponentiate( /*#__PURE__*/JSBI.BigInt(10), /*#__PURE__*/JSBI.BigInt(4));
 var SwapMath = /*#__PURE__*/function () {
   /**
    * Cannot be constructed.
@@ -1773,7 +1777,6 @@ var SwapMath = /*#__PURE__*/function () {
       //                                                               Pb = sqrtRatioTargetX96
 
       returnValues.amountIn = zeroForOne ? SqrtPriceMath.getAmount0Delta(sqrtRatioTargetX96, sqrtRatioCurrentX96, liquidity, true) : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, true);
-      console.log('====computeSwapStep', amountRemainingLessFee, returnValues.amountIn.toString(), JSBI.greaterThanOrEqual(amountRemainingLessFee, returnValues.amountIn));
 
       if (JSBI.greaterThanOrEqual(amountRemainingLessFee, returnValues.amountIn)) {
         returnValues.sqrtRatioNextX96 = sqrtRatioTargetX96;
@@ -1782,7 +1785,6 @@ var SwapMath = /*#__PURE__*/function () {
         // so must to recalculate the sqrtRatioNextX96 by the amountRemainingLessFee
         // and update the amountin accordingly later, base on the recalculated sqrtRatioNextX96
         returnValues.sqrtRatioNextX96 = SqrtPriceMath.getNextSqrtPriceFromInput(sqrtRatioCurrentX96, liquidity, amountRemainingLessFee, zeroForOne);
-        console.log('====computeSwapStep sqrtRatioNextX96', returnValues.sqrtRatioNextX96.toString());
       }
     } else {
       // exactOut
@@ -1808,11 +1810,8 @@ var SwapMath = /*#__PURE__*/function () {
       returnValues.amountIn = max && exactIn ? returnValues.amountIn : SqrtPriceMath.getAmount0Delta(returnValues.sqrtRatioNextX96, sqrtRatioCurrentX96, liquidity, true);
       returnValues.amountOut = max && !exactIn ? returnValues.amountOut : SqrtPriceMath.getAmount1Delta(returnValues.sqrtRatioNextX96, sqrtRatioCurrentX96, liquidity, false);
     } else {
-      var _returnValues$amountO;
-
       returnValues.amountIn = max && exactIn ? returnValues.amountIn : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, returnValues.sqrtRatioNextX96, liquidity, true);
       returnValues.amountOut = max && !exactIn ? returnValues.amountOut : SqrtPriceMath.getAmount0Delta(sqrtRatioCurrentX96, returnValues.sqrtRatioNextX96, liquidity, false);
-      console.log('====computeSwapStep amountIn/amountOut recalculated', (_returnValues$amountO = returnValues.amountOut) == null ? void 0 : _returnValues$amountO.toString(), SqrtPriceMath.getAmount0Delta(sqrtRatioCurrentX96, returnValues.sqrtRatioNextX96, liquidity, false).toString());
     }
 
     if (!exactIn && JSBI.greaterThan(returnValues.amountOut, JSBI.multiply(amountRemaining, NEGATIVE_ONE))) {
@@ -1857,7 +1856,7 @@ var Pool = /*#__PURE__*/function () {
       ticks = NO_TICK_DATA_PROVIDER_DEFAULT;
     }
 
-    !(Number.isInteger(fee) && fee < 1000000) ?  invariant(false, 'FEE')  : void 0;
+    !(Number.isInteger(fee) && fee < 10000) ?  invariant(false, 'FEE')  : void 0;
     var tickCurrentSqrtRatioX96 = TickMath.getSqrtRatioAtTick(tickCurrent);
     var nextTickSqrtRatioX96 = TickMath.getSqrtRatioAtTick(tickCurrent + 1);
     !(JSBI.greaterThanOrEqual(JSBI.BigInt(sqrtRatioX96), tickCurrentSqrtRatioX96) && JSBI.lessThanOrEqual(JSBI.BigInt(sqrtRatioX96), nextTickSqrtRatioX96)) ?  invariant(false, 'PRICE_BOUNDS')  : void 0;
@@ -2058,7 +2057,7 @@ var Pool = /*#__PURE__*/function () {
 
             case 4:
               if (!(JSBI.notEqual(state.amountSpecifiedRemaining, ZERO) && state.sqrtPriceX96 != sqrtPriceLimitX96)) {
-                _context3.next = 38;
+                _context3.next = 35;
                 break;
               }
 
@@ -2079,13 +2078,11 @@ var Pool = /*#__PURE__*/function () {
               }
 
               step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
-              console.log('====tick', step.tickNext, step.sqrtPriceNextX96);
               _SwapMath$computeSwap = SwapMath.computeSwapStep(state.sqrtPriceX96, (zeroForOne ? JSBI.lessThan(step.sqrtPriceNextX96, sqrtPriceLimitX96) : JSBI.greaterThan(step.sqrtPriceNextX96, sqrtPriceLimitX96)) ? sqrtPriceLimitX96 : step.sqrtPriceNextX96, state.liquidity, state.amountSpecifiedRemaining, this.fee);
               state.sqrtPriceX96 = _SwapMath$computeSwap[0];
               step.amountIn = _SwapMath$computeSwap[1];
               step.amountOut = _SwapMath$computeSwap[2];
               step.feeAmount = _SwapMath$computeSwap[3];
-              console.log('====amountOut', step.amountOut, step.sqrtPriceNextX96.toString());
 
               if (exactInput) {
                 state.amountSpecifiedRemaining = JSBI.subtract(state.amountSpecifiedRemaining, JSBI.add(step.amountIn, step.feeAmount));
@@ -2093,25 +2090,24 @@ var Pool = /*#__PURE__*/function () {
               } else {
                 state.amountSpecifiedRemaining = JSBI.add(state.amountSpecifiedRemaining, step.amountOut);
                 state.amountCalculated = JSBI.add(state.amountCalculated, JSBI.add(step.amountIn, step.feeAmount));
-              }
+              } // TODO
 
-              console.log('====amountOut', step.amountOut, step.amountIn, step.feeAmount, state.amountSpecifiedRemaining); // TODO
 
               if (!JSBI.equal(state.sqrtPriceX96, step.sqrtPriceNextX96)) {
-                _context3.next = 35;
-                break;
-              }
-
-              if (!step.initialized) {
                 _context3.next = 32;
                 break;
               }
 
+              if (!step.initialized) {
+                _context3.next = 29;
+                break;
+              }
+
               _context3.t0 = JSBI;
-              _context3.next = 28;
+              _context3.next = 25;
               return this.tickDataProvider.getTick(step.tickNext);
 
-            case 28:
+            case 25:
               _context3.t1 = _context3.sent.liquidityNet;
               liquidityNet = _context3.t0.BigInt.call(_context3.t0, _context3.t1);
               // if we're moving leftward, we interpret liquidityNet as the opposite sign
@@ -2119,22 +2115,22 @@ var Pool = /*#__PURE__*/function () {
               if (zeroForOne) liquidityNet = JSBI.multiply(liquidityNet, NEGATIVE_ONE);
               state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
 
-            case 32:
+            case 29:
               state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;
-              _context3.next = 36;
+              _context3.next = 33;
               break;
 
-            case 35:
+            case 32:
               if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
                 state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPriceX96);
               }
 
-            case 36:
+            case 33:
               _context3.next = 4;
               break;
 
-            case 38:
+            case 35:
               return _context3.abrupt("return", {
                 amountCalculated: state.amountCalculated,
                 sqrtRatioX96: state.sqrtPriceX96,
@@ -2142,7 +2138,7 @@ var Pool = /*#__PURE__*/function () {
                 tickCurrent: state.tick
               });
 
-            case 39:
+            case 36:
             case "end":
               return _context3.stop();
           }
@@ -2845,8 +2841,6 @@ var Multicall = /*#__PURE__*/function () {
       calldatas = [calldatas];
     }
 
-    console.log(Multicall.INTERFACE.encodeFunctionData('multicall', [['0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa']]));
-    console.log(Multicall.INTERFACE.encodeFunctionData('multicall', [['0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb']]));
     return calldatas.length === 1 ? calldatas[0] : Multicall.INTERFACE.encodeFunctionData('multicall', [calldatas]);
   };
 
@@ -4225,7 +4219,10 @@ var NonfungiblePositionManager = /*#__PURE__*/function () {
         calldatas.push(Payments.encodeRefundETH());
       }
 
-      value = toHex(wrappedValue);
+      if (isMint(options) && options.createPool) {
+        var ethUnlock = position.pool.token0.equals(wrapped) ? SqrtPriceMath.getAmount0Unlock(position.pool.sqrtRatioX96) : SqrtPriceMath.getAmount1Unlock(position.pool.sqrtRatioX96);
+        value = toHex(JSBI.add(wrappedValue, ethUnlock));
+      } else value = toHex(wrappedValue);
     }
 
     return {
@@ -4308,24 +4305,57 @@ var NonfungiblePositionManager = /*#__PURE__*/function () {
 
   NonfungiblePositionManager.encodeCollect = function encodeCollect(options) {
     var calldatas = [];
-    var tokenId = toHex(options.tokenId);
-    var involvesETH = options.expectedCurrencyOwed0.currency.isNative || options.expectedCurrencyOwed1.currency.isNative;
-    var recipient = sdkCore.validateAndParseAddress(options.recipient); // collect
+    var tokenId = toHex(options.tokenId); // const involvesETH =
+    // options.expectedCurrencyOwed0.currency.isNative || options.expectedCurrencyOwed1.currency.isNative
 
-    calldatas.push(NonfungiblePositionManager.INTERFACE.encodeFunctionData('collect', [{
+    var recipient = sdkCore.validateAndParseAddress(options.recipient);
+    var deadline = toHex(options.deadline); //remove a small amount to update the RTokens
+
+    calldatas.push(NonfungiblePositionManager.INTERFACE.encodeFunctionData('removeLiquidity', [{
       tokenId: tokenId,
-      recipient: involvesETH ? ADDRESS_ZERO : recipient,
+      liquidity: '0x1',
       amount0Min: 0,
-      amount1Min: 0
-    }]));
+      amount1Min: 0,
+      deadline: deadline
+    }])); // collect
 
-    if (involvesETH) {
-      var ethAmount = options.expectedCurrencyOwed0.currency.isNative ? options.expectedCurrencyOwed0.quotient : options.expectedCurrencyOwed1.quotient;
-      var token = options.expectedCurrencyOwed0.currency.isNative ? options.expectedCurrencyOwed1.currency : options.expectedCurrencyOwed0.currency;
-      var tokenAmount = options.expectedCurrencyOwed0.currency.isNative ? options.expectedCurrencyOwed1.quotient : options.expectedCurrencyOwed0.quotient;
-      calldatas.push(Payments.encodeUnwrapWETH(ethAmount, recipient));
-      calldatas.push(Payments.encodeSweepToken(token, tokenAmount, recipient));
+    calldatas.push(NonfungiblePositionManager.INTERFACE.encodeFunctionData('burnRTokens', [{
+      tokenId: tokenId,
+      amount0Min: 0,
+      amount1Min: 0,
+      deadline: deadline
+    }]));
+    var token0IsNative = options.expectedCurrencyOwed0.currency.isNative;
+    var token1IsNative = options.expectedCurrencyOwed1.currency.isNative;
+    var token0Amount = options.expectedCurrencyOwed0.quotient;
+    var token1Amount = options.expectedCurrencyOwed1.quotient;
+
+    if (token0IsNative) {
+      calldatas.push(Payments.encodeUnwrapWETH(token0Amount, recipient));
+    } else {
+      var token = options.expectedCurrencyOwed0.currency;
+      calldatas.push(Payments.encodeSweepToken(token, token0Amount, recipient));
     }
+
+    if (token1IsNative) {
+      calldatas.push(Payments.encodeUnwrapWETH(token1Amount, recipient));
+    } else {
+      var _token = options.expectedCurrencyOwed1.currency;
+      calldatas.push(Payments.encodeSweepToken(_token, token1Amount, recipient));
+    } // if (involvesETH) {
+    //   const ethAmount = options.expectedCurrencyOwed0.currency.isNative
+    //     ? options.expectedCurrencyOwed0.quotient
+    //     : options.expectedCurrencyOwed1.quotient
+    //   const token = options.expectedCurrencyOwed0.currency.isNative
+    //     ? (options.expectedCurrencyOwed1.currency as Token)
+    //     : (options.expectedCurrencyOwed0.currency as Token)
+    //   const tokenAmount = options.expectedCurrencyOwed0.currency.isNative
+    //     ? options.expectedCurrencyOwed1.quotient
+    //     : options.expectedCurrencyOwed0.quotient
+    //   calldatas.push(Payments.encodeUnwrapWETH(ethAmount, recipient))
+    //   calldatas.push(Payments.encodeSweepToken(token, tokenAmount, recipient))
+    // }
+
 
     return calldatas;
   };
@@ -4348,7 +4378,8 @@ var NonfungiblePositionManager = /*#__PURE__*/function () {
   NonfungiblePositionManager.removeCallParameters = function removeCallParameters(position, options) {
     var calldatas = [];
     var deadline = toHex(options.deadline);
-    var tokenId = toHex(options.tokenId); // construct a partial position with a percentage of liquidity
+    var tokenId = toHex(options.tokenId);
+    console.log(position); // construct a partial position with a percentage of liquidity
 
     var partialPosition = new Position({
       pool: position.pool,
@@ -4430,29 +4461,10 @@ var abi$3 = [
 				internalType: "address",
 				name: "_factory",
 				type: "address"
-			},
-			{
-				internalType: "address",
-				name: "_WETH9",
-				type: "address"
 			}
 		],
 		stateMutability: "nonpayable",
 		type: "constructor"
-	},
-	{
-		inputs: [
-		],
-		name: "WETH9",
-		outputs: [
-			{
-				internalType: "address",
-				name: "",
-				type: "address"
-			}
-		],
-		stateMutability: "view",
-		type: "function"
 	},
 	{
 		inputs: [
@@ -4487,6 +4499,21 @@ var abi$3 = [
 				internalType: "uint256",
 				name: "amountOut",
 				type: "uint256"
+			},
+			{
+				internalType: "uint160[]",
+				name: "afterSqrtPList",
+				type: "uint160[]"
+			},
+			{
+				internalType: "uint32[]",
+				name: "initializedTicksCrossedList",
+				type: "uint32[]"
+			},
+			{
+				internalType: "uint256",
+				name: "gasEstimate",
+				type: "uint256"
 			}
 		],
 		stateMutability: "nonpayable",
@@ -4495,37 +4522,71 @@ var abi$3 = [
 	{
 		inputs: [
 			{
-				internalType: "address",
-				name: "tokenIn",
-				type: "address"
-			},
-			{
-				internalType: "address",
-				name: "tokenOut",
-				type: "address"
-			},
-			{
-				internalType: "uint24",
-				name: "fee",
-				type: "uint24"
-			},
-			{
-				internalType: "uint256",
-				name: "amountIn",
-				type: "uint256"
-			},
-			{
-				internalType: "uint160",
-				name: "sqrtPriceLimitX96",
-				type: "uint160"
+				components: [
+					{
+						internalType: "address",
+						name: "tokenIn",
+						type: "address"
+					},
+					{
+						internalType: "address",
+						name: "tokenOut",
+						type: "address"
+					},
+					{
+						internalType: "uint256",
+						name: "amountIn",
+						type: "uint256"
+					},
+					{
+						internalType: "uint16",
+						name: "feeBps",
+						type: "uint16"
+					},
+					{
+						internalType: "uint160",
+						name: "limitSqrtP",
+						type: "uint160"
+					}
+				],
+				internalType: "struct IQuoterV2.QuoteExactInputSingleParams",
+				name: "params",
+				type: "tuple"
 			}
 		],
 		name: "quoteExactInputSingle",
 		outputs: [
 			{
-				internalType: "uint256",
-				name: "amountOut",
-				type: "uint256"
+				components: [
+					{
+						internalType: "uint256",
+						name: "usedAmount",
+						type: "uint256"
+					},
+					{
+						internalType: "uint256",
+						name: "returnedAmount",
+						type: "uint256"
+					},
+					{
+						internalType: "uint160",
+						name: "afterSqrtP",
+						type: "uint160"
+					},
+					{
+						internalType: "uint32",
+						name: "initializedTicksCrossed",
+						type: "uint32"
+					},
+					{
+						internalType: "uint256",
+						name: "gasEstimate",
+						type: "uint256"
+					}
+				],
+				internalType: "struct IQuoterV2.QuoteOutput",
+				name: "output",
+				type: "tuple"
 			}
 		],
 		stateMutability: "nonpayable",
@@ -4550,6 +4611,21 @@ var abi$3 = [
 				internalType: "uint256",
 				name: "amountIn",
 				type: "uint256"
+			},
+			{
+				internalType: "uint160[]",
+				name: "afterSqrtPList",
+				type: "uint160[]"
+			},
+			{
+				internalType: "uint32[]",
+				name: "initializedTicksCrossedList",
+				type: "uint32[]"
+			},
+			{
+				internalType: "uint256",
+				name: "gasEstimate",
+				type: "uint256"
 			}
 		],
 		stateMutability: "nonpayable",
@@ -4558,37 +4634,71 @@ var abi$3 = [
 	{
 		inputs: [
 			{
-				internalType: "address",
-				name: "tokenIn",
-				type: "address"
-			},
-			{
-				internalType: "address",
-				name: "tokenOut",
-				type: "address"
-			},
-			{
-				internalType: "uint24",
-				name: "fee",
-				type: "uint24"
-			},
-			{
-				internalType: "uint256",
-				name: "amountOut",
-				type: "uint256"
-			},
-			{
-				internalType: "uint160",
-				name: "sqrtPriceLimitX96",
-				type: "uint160"
+				components: [
+					{
+						internalType: "address",
+						name: "tokenIn",
+						type: "address"
+					},
+					{
+						internalType: "address",
+						name: "tokenOut",
+						type: "address"
+					},
+					{
+						internalType: "uint256",
+						name: "amount",
+						type: "uint256"
+					},
+					{
+						internalType: "uint16",
+						name: "feeBps",
+						type: "uint16"
+					},
+					{
+						internalType: "uint160",
+						name: "limitSqrtP",
+						type: "uint160"
+					}
+				],
+				internalType: "struct IQuoterV2.QuoteExactOutputSingleParams",
+				name: "params",
+				type: "tuple"
 			}
 		],
 		name: "quoteExactOutputSingle",
 		outputs: [
 			{
-				internalType: "uint256",
-				name: "amountIn",
-				type: "uint256"
+				components: [
+					{
+						internalType: "uint256",
+						name: "usedAmount",
+						type: "uint256"
+					},
+					{
+						internalType: "uint256",
+						name: "returnedAmount",
+						type: "uint256"
+					},
+					{
+						internalType: "uint160",
+						name: "afterSqrtP",
+						type: "uint160"
+					},
+					{
+						internalType: "uint32",
+						name: "initializedTicksCrossed",
+						type: "uint32"
+					},
+					{
+						internalType: "uint256",
+						name: "gasEstimate",
+						type: "uint256"
+					}
+				],
+				internalType: "struct IQuoterV2.QuoteOutput",
+				name: "output",
+				type: "tuple"
 			}
 		],
 		stateMutability: "nonpayable",
@@ -4612,7 +4722,7 @@ var abi$3 = [
 				type: "bytes"
 			}
 		],
-		name: "uniswapV3SwapCallback",
+		name: "swapCallback",
 		outputs: [
 		],
 		stateMutability: "view",
@@ -4651,11 +4761,11 @@ var SwapQuoter = /*#__PURE__*/function () {
       if (tradeType === sdkCore.TradeType.EXACT_INPUT) {
         var _options$sqrtPriceLim, _options;
 
-        calldata = SwapQuoter.INTERFACE.encodeFunctionData("quoteExactInputSingle", [route.tokenPath[0].address, route.tokenPath[1].address, route.pools[0].fee, quoteAmount, toHex((_options$sqrtPriceLim = (_options = options) == null ? void 0 : _options.sqrtPriceLimitX96) != null ? _options$sqrtPriceLim : 0)]);
+        calldata = SwapQuoter.INTERFACE.encodeFunctionData("quoteExactInputSingle", [[route.tokenPath[0].address, route.tokenPath[1].address, quoteAmount, route.pools[0].fee, toHex((_options$sqrtPriceLim = (_options = options) == null ? void 0 : _options.sqrtPriceLimitX96) != null ? _options$sqrtPriceLim : 0)]]);
       } else {
         var _options$sqrtPriceLim2, _options2;
 
-        calldata = SwapQuoter.INTERFACE.encodeFunctionData("quoteExactOutputSingle", [route.tokenPath[0].address, route.tokenPath[1].address, route.pools[0].fee, quoteAmount, toHex((_options$sqrtPriceLim2 = (_options2 = options) == null ? void 0 : _options2.sqrtPriceLimitX96) != null ? _options$sqrtPriceLim2 : 0)]);
+        calldata = SwapQuoter.INTERFACE.encodeFunctionData("quoteExactOutputSingle", [[route.tokenPath[0].address, route.tokenPath[1].address, quoteAmount, route.pools[0].fee, toHex((_options$sqrtPriceLim2 = (_options2 = options) == null ? void 0 : _options2.sqrtPriceLimitX96) != null ? _options$sqrtPriceLim2 : 0)]]);
       }
     } else {
       var _options3;
@@ -4708,7 +4818,7 @@ var abi$4 = [
 			},
 			{
 				internalType: "address",
-				name: "_WETH9",
+				name: "_WETH",
 				type: "address"
 			}
 		],
@@ -4718,7 +4828,7 @@ var abi$4 = [
 	{
 		inputs: [
 		],
-		name: "WETH9",
+		name: "WETH",
 		outputs: [
 			{
 				internalType: "address",
@@ -4727,220 +4837,6 @@ var abi$4 = [
 			}
 		],
 		stateMutability: "view",
-		type: "function"
-	},
-	{
-		inputs: [
-			{
-				components: [
-					{
-						internalType: "bytes",
-						name: "path",
-						type: "bytes"
-					},
-					{
-						internalType: "address",
-						name: "recipient",
-						type: "address"
-					},
-					{
-						internalType: "uint256",
-						name: "deadline",
-						type: "uint256"
-					},
-					{
-						internalType: "uint256",
-						name: "amountIn",
-						type: "uint256"
-					},
-					{
-						internalType: "uint256",
-						name: "amountOutMinimum",
-						type: "uint256"
-					}
-				],
-				internalType: "struct ISwapRouter.ExactInputParams",
-				name: "params",
-				type: "tuple"
-			}
-		],
-		name: "exactInput",
-		outputs: [
-			{
-				internalType: "uint256",
-				name: "amountOut",
-				type: "uint256"
-			}
-		],
-		stateMutability: "payable",
-		type: "function"
-	},
-	{
-		inputs: [
-			{
-				components: [
-					{
-						internalType: "address",
-						name: "tokenIn",
-						type: "address"
-					},
-					{
-						internalType: "address",
-						name: "tokenOut",
-						type: "address"
-					},
-					{
-						internalType: "uint24",
-						name: "fee",
-						type: "uint24"
-					},
-					{
-						internalType: "address",
-						name: "recipient",
-						type: "address"
-					},
-					{
-						internalType: "uint256",
-						name: "deadline",
-						type: "uint256"
-					},
-					{
-						internalType: "uint256",
-						name: "amountIn",
-						type: "uint256"
-					},
-					{
-						internalType: "uint256",
-						name: "amountOutMinimum",
-						type: "uint256"
-					},
-					{
-						internalType: "uint160",
-						name: "sqrtPriceLimitX96",
-						type: "uint160"
-					}
-				],
-				internalType: "struct ISwapRouter.ExactInputSingleParams",
-				name: "params",
-				type: "tuple"
-			}
-		],
-		name: "exactInputSingle",
-		outputs: [
-			{
-				internalType: "uint256",
-				name: "amountOut",
-				type: "uint256"
-			}
-		],
-		stateMutability: "payable",
-		type: "function"
-	},
-	{
-		inputs: [
-			{
-				components: [
-					{
-						internalType: "bytes",
-						name: "path",
-						type: "bytes"
-					},
-					{
-						internalType: "address",
-						name: "recipient",
-						type: "address"
-					},
-					{
-						internalType: "uint256",
-						name: "deadline",
-						type: "uint256"
-					},
-					{
-						internalType: "uint256",
-						name: "amountOut",
-						type: "uint256"
-					},
-					{
-						internalType: "uint256",
-						name: "amountInMaximum",
-						type: "uint256"
-					}
-				],
-				internalType: "struct ISwapRouter.ExactOutputParams",
-				name: "params",
-				type: "tuple"
-			}
-		],
-		name: "exactOutput",
-		outputs: [
-			{
-				internalType: "uint256",
-				name: "amountIn",
-				type: "uint256"
-			}
-		],
-		stateMutability: "payable",
-		type: "function"
-	},
-	{
-		inputs: [
-			{
-				components: [
-					{
-						internalType: "address",
-						name: "tokenIn",
-						type: "address"
-					},
-					{
-						internalType: "address",
-						name: "tokenOut",
-						type: "address"
-					},
-					{
-						internalType: "uint24",
-						name: "fee",
-						type: "uint24"
-					},
-					{
-						internalType: "address",
-						name: "recipient",
-						type: "address"
-					},
-					{
-						internalType: "uint256",
-						name: "deadline",
-						type: "uint256"
-					},
-					{
-						internalType: "uint256",
-						name: "amountOut",
-						type: "uint256"
-					},
-					{
-						internalType: "uint256",
-						name: "amountInMaximum",
-						type: "uint256"
-					},
-					{
-						internalType: "uint160",
-						name: "sqrtPriceLimitX96",
-						type: "uint160"
-					}
-				],
-				internalType: "struct ISwapRouter.ExactOutputSingleParams",
-				name: "params",
-				type: "tuple"
-			}
-		],
-		name: "exactOutputSingle",
-		outputs: [
-			{
-				internalType: "uint256",
-				name: "amountIn",
-				type: "uint256"
-			}
-		],
-		stateMutability: "payable",
 		type: "function"
 	},
 	{
@@ -4979,221 +4875,7 @@ var abi$4 = [
 	{
 		inputs: [
 		],
-		name: "refundETH",
-		outputs: [
-		],
-		stateMutability: "payable",
-		type: "function"
-	},
-	{
-		inputs: [
-			{
-				internalType: "address",
-				name: "token",
-				type: "address"
-			},
-			{
-				internalType: "uint256",
-				name: "value",
-				type: "uint256"
-			},
-			{
-				internalType: "uint256",
-				name: "deadline",
-				type: "uint256"
-			},
-			{
-				internalType: "uint8",
-				name: "v",
-				type: "uint8"
-			},
-			{
-				internalType: "bytes32",
-				name: "r",
-				type: "bytes32"
-			},
-			{
-				internalType: "bytes32",
-				name: "s",
-				type: "bytes32"
-			}
-		],
-		name: "selfPermit",
-		outputs: [
-		],
-		stateMutability: "payable",
-		type: "function"
-	},
-	{
-		inputs: [
-			{
-				internalType: "address",
-				name: "token",
-				type: "address"
-			},
-			{
-				internalType: "uint256",
-				name: "nonce",
-				type: "uint256"
-			},
-			{
-				internalType: "uint256",
-				name: "expiry",
-				type: "uint256"
-			},
-			{
-				internalType: "uint8",
-				name: "v",
-				type: "uint8"
-			},
-			{
-				internalType: "bytes32",
-				name: "r",
-				type: "bytes32"
-			},
-			{
-				internalType: "bytes32",
-				name: "s",
-				type: "bytes32"
-			}
-		],
-		name: "selfPermitAllowed",
-		outputs: [
-		],
-		stateMutability: "payable",
-		type: "function"
-	},
-	{
-		inputs: [
-			{
-				internalType: "address",
-				name: "token",
-				type: "address"
-			},
-			{
-				internalType: "uint256",
-				name: "nonce",
-				type: "uint256"
-			},
-			{
-				internalType: "uint256",
-				name: "expiry",
-				type: "uint256"
-			},
-			{
-				internalType: "uint8",
-				name: "v",
-				type: "uint8"
-			},
-			{
-				internalType: "bytes32",
-				name: "r",
-				type: "bytes32"
-			},
-			{
-				internalType: "bytes32",
-				name: "s",
-				type: "bytes32"
-			}
-		],
-		name: "selfPermitAllowedIfNecessary",
-		outputs: [
-		],
-		stateMutability: "payable",
-		type: "function"
-	},
-	{
-		inputs: [
-			{
-				internalType: "address",
-				name: "token",
-				type: "address"
-			},
-			{
-				internalType: "uint256",
-				name: "value",
-				type: "uint256"
-			},
-			{
-				internalType: "uint256",
-				name: "deadline",
-				type: "uint256"
-			},
-			{
-				internalType: "uint8",
-				name: "v",
-				type: "uint8"
-			},
-			{
-				internalType: "bytes32",
-				name: "r",
-				type: "bytes32"
-			},
-			{
-				internalType: "bytes32",
-				name: "s",
-				type: "bytes32"
-			}
-		],
-		name: "selfPermitIfNecessary",
-		outputs: [
-		],
-		stateMutability: "payable",
-		type: "function"
-	},
-	{
-		inputs: [
-			{
-				internalType: "address",
-				name: "token",
-				type: "address"
-			},
-			{
-				internalType: "uint256",
-				name: "amountMinimum",
-				type: "uint256"
-			},
-			{
-				internalType: "address",
-				name: "recipient",
-				type: "address"
-			}
-		],
-		name: "sweepToken",
-		outputs: [
-		],
-		stateMutability: "payable",
-		type: "function"
-	},
-	{
-		inputs: [
-			{
-				internalType: "address",
-				name: "token",
-				type: "address"
-			},
-			{
-				internalType: "uint256",
-				name: "amountMinimum",
-				type: "uint256"
-			},
-			{
-				internalType: "address",
-				name: "recipient",
-				type: "address"
-			},
-			{
-				internalType: "uint256",
-				name: "feeBips",
-				type: "uint256"
-			},
-			{
-				internalType: "address",
-				name: "feeRecipient",
-				type: "address"
-			}
-		],
-		name: "sweepTokenWithFee",
+		name: "refundEth",
 		outputs: [
 		],
 		stateMutability: "payable",
@@ -5203,21 +4885,21 @@ var abi$4 = [
 		inputs: [
 			{
 				internalType: "int256",
-				name: "amount0Delta",
+				name: "deltaQty0",
 				type: "int256"
 			},
 			{
 				internalType: "int256",
-				name: "amount1Delta",
+				name: "deltaQty1",
 				type: "int256"
 			},
 			{
 				internalType: "bytes",
-				name: "_data",
+				name: "data",
 				type: "bytes"
 			}
 		],
-		name: "uniswapV3SwapCallback",
+		name: "swapCallback",
 		outputs: [
 		],
 		stateMutability: "nonpayable",
@@ -5226,8 +4908,227 @@ var abi$4 = [
 	{
 		inputs: [
 			{
+				components: [
+					{
+						internalType: "bytes",
+						name: "path",
+						type: "bytes"
+					},
+					{
+						internalType: "address",
+						name: "recipient",
+						type: "address"
+					},
+					{
+						internalType: "uint256",
+						name: "deadline",
+						type: "uint256"
+					},
+					{
+						internalType: "uint256",
+						name: "amountIn",
+						type: "uint256"
+					},
+					{
+						internalType: "uint256",
+						name: "minAmountOut",
+						type: "uint256"
+					}
+				],
+				internalType: "struct IRouter.ExactInputParams",
+				name: "params",
+				type: "tuple"
+			}
+		],
+		name: "swapExactInput",
+		outputs: [
+			{
 				internalType: "uint256",
-				name: "amountMinimum",
+				name: "amountOut",
+				type: "uint256"
+			}
+		],
+		stateMutability: "payable",
+		type: "function"
+	},
+	{
+		inputs: [
+			{
+				components: [
+					{
+						internalType: "address",
+						name: "tokenIn",
+						type: "address"
+					},
+					{
+						internalType: "address",
+						name: "tokenOut",
+						type: "address"
+					},
+					{
+						internalType: "uint16",
+						name: "fee",
+						type: "uint16"
+					},
+					{
+						internalType: "address",
+						name: "recipient",
+						type: "address"
+					},
+					{
+						internalType: "uint256",
+						name: "deadline",
+						type: "uint256"
+					},
+					{
+						internalType: "uint256",
+						name: "amountIn",
+						type: "uint256"
+					},
+					{
+						internalType: "uint256",
+						name: "minAmountOut",
+						type: "uint256"
+					},
+					{
+						internalType: "uint160",
+						name: "limitSqrtP",
+						type: "uint160"
+					}
+				],
+				internalType: "struct IRouter.ExactInputSingleParams",
+				name: "params",
+				type: "tuple"
+			}
+		],
+		name: "swapExactInputSingle",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "amountOut",
+				type: "uint256"
+			}
+		],
+		stateMutability: "payable",
+		type: "function"
+	},
+	{
+		inputs: [
+			{
+				components: [
+					{
+						internalType: "bytes",
+						name: "path",
+						type: "bytes"
+					},
+					{
+						internalType: "address",
+						name: "recipient",
+						type: "address"
+					},
+					{
+						internalType: "uint256",
+						name: "deadline",
+						type: "uint256"
+					},
+					{
+						internalType: "uint256",
+						name: "amountOut",
+						type: "uint256"
+					},
+					{
+						internalType: "uint256",
+						name: "maxAmountIn",
+						type: "uint256"
+					}
+				],
+				internalType: "struct IRouter.ExactOutputParams",
+				name: "params",
+				type: "tuple"
+			}
+		],
+		name: "swapExactOutput",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "amountIn",
+				type: "uint256"
+			}
+		],
+		stateMutability: "payable",
+		type: "function"
+	},
+	{
+		inputs: [
+			{
+				components: [
+					{
+						internalType: "address",
+						name: "tokenIn",
+						type: "address"
+					},
+					{
+						internalType: "address",
+						name: "tokenOut",
+						type: "address"
+					},
+					{
+						internalType: "uint16",
+						name: "fee",
+						type: "uint16"
+					},
+					{
+						internalType: "address",
+						name: "recipient",
+						type: "address"
+					},
+					{
+						internalType: "uint256",
+						name: "deadline",
+						type: "uint256"
+					},
+					{
+						internalType: "uint256",
+						name: "amountOut",
+						type: "uint256"
+					},
+					{
+						internalType: "uint256",
+						name: "maxAmountIn",
+						type: "uint256"
+					},
+					{
+						internalType: "uint160",
+						name: "limitSqrtP",
+						type: "uint160"
+					}
+				],
+				internalType: "struct IRouter.ExactOutputSingleParams",
+				name: "params",
+				type: "tuple"
+			}
+		],
+		name: "swapExactOutputSingle",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "amountIn",
+				type: "uint256"
+			}
+		],
+		stateMutability: "payable",
+		type: "function"
+	},
+	{
+		inputs: [
+			{
+				internalType: "address",
+				name: "token",
+				type: "address"
+			},
+			{
+				internalType: "uint256",
+				name: "minAmount",
 				type: "uint256"
 			},
 			{
@@ -5236,7 +5137,41 @@ var abi$4 = [
 				type: "address"
 			}
 		],
-		name: "unwrapWETH9",
+		name: "transferAllTokens",
+		outputs: [
+		],
+		stateMutability: "payable",
+		type: "function"
+	},
+	{
+		inputs: [
+			{
+				internalType: "address",
+				name: "token",
+				type: "address"
+			},
+			{
+				internalType: "uint256",
+				name: "minAmount",
+				type: "uint256"
+			},
+			{
+				internalType: "address",
+				name: "recipient",
+				type: "address"
+			},
+			{
+				internalType: "uint256",
+				name: "feeBps",
+				type: "uint256"
+			},
+			{
+				internalType: "address",
+				name: "feeRecipient",
+				type: "address"
+			}
+		],
+		name: "transferAllTokensWithFee",
 		outputs: [
 		],
 		stateMutability: "payable",
@@ -5246,7 +5181,26 @@ var abi$4 = [
 		inputs: [
 			{
 				internalType: "uint256",
-				name: "amountMinimum",
+				name: "minAmount",
+				type: "uint256"
+			},
+			{
+				internalType: "address",
+				name: "recipient",
+				type: "address"
+			}
+		],
+		name: "unwrapWeth",
+		outputs: [
+		],
+		stateMutability: "payable",
+		type: "function"
+	},
+	{
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "minAmount",
 				type: "uint256"
 			},
 			{
@@ -5256,7 +5210,7 @@ var abi$4 = [
 			},
 			{
 				internalType: "uint256",
-				name: "feeBips",
+				name: "feeBps",
 				type: "uint256"
 			},
 			{
@@ -5265,7 +5219,7 @@ var abi$4 = [
 				type: "address"
 			}
 		],
-		name: "unwrapWETH9WithFee",
+		name: "unwrapWethWithFee",
 		outputs: [
 		],
 		stateMutability: "payable",
@@ -5356,10 +5310,10 @@ var SwapRouter = /*#__PURE__*/function () {
               recipient: routerMustCustody ? ADDRESS_ZERO : recipient,
               deadline: deadline,
               amountIn: amountIn,
-              amountOutMinimum: amountOut,
-              sqrtPriceLimitX96: toHex((_options$sqrtPriceLim = options.sqrtPriceLimitX96) != null ? _options$sqrtPriceLim : 0)
+              minAmountOut: amountOut,
+              limitSqrtP: toHex((_options$sqrtPriceLim = options.sqrtPriceLimitX96) != null ? _options$sqrtPriceLim : 0)
             };
-            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactInputSingle', [exactInputSingleParams]));
+            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactInputSingle', [exactInputSingleParams]));
           } else {
             var _options$sqrtPriceLim2;
 
@@ -5370,10 +5324,10 @@ var SwapRouter = /*#__PURE__*/function () {
               recipient: routerMustCustody ? ADDRESS_ZERO : recipient,
               deadline: deadline,
               amountOut: amountOut,
-              amountInMaximum: amountIn,
-              sqrtPriceLimitX96: toHex((_options$sqrtPriceLim2 = options.sqrtPriceLimitX96) != null ? _options$sqrtPriceLim2 : 0)
+              maxAmountIn: amountIn,
+              limitSqrtP: toHex((_options$sqrtPriceLim2 = options.sqrtPriceLimitX96) != null ? _options$sqrtPriceLim2 : 0)
             };
-            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactOutputSingle', [exactOutputSingleParams]));
+            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactOutputSingle', [exactOutputSingleParams]));
           }
         } else {
           !(options.sqrtPriceLimitX96 === undefined) ?  invariant(false, 'MULTIHOP_PRICE_LIMIT')  : void 0;
@@ -5385,18 +5339,18 @@ var SwapRouter = /*#__PURE__*/function () {
               recipient: routerMustCustody ? ADDRESS_ZERO : recipient,
               deadline: deadline,
               amountIn: amountIn,
-              amountOutMinimum: amountOut
+              minAmountOut: amountOut
             };
-            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactInput', [exactInputParams]));
+            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactInput', [exactInputParams]));
           } else {
             var exactOutputParams = {
               path: path,
               recipient: routerMustCustody ? ADDRESS_ZERO : recipient,
               deadline: deadline,
               amountOut: amountOut,
-              amountInMaximum: amountIn
+              maxAmountIn: amountIn
             };
-            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactOutput', [exactOutputParams]));
+            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactOutput', [exactOutputParams]));
           }
         }
       }
@@ -5433,6 +5387,7 @@ exports.ADDRESS_ZERO = ADDRESS_ZERO;
 exports.FACTORY_ADDRESS = FACTORY_ADDRESS;
 exports.FullMath = FullMath;
 exports.LiquidityMath = LiquidityMath;
+exports.MIN_LIQUIDITY = MIN_LIQUIDITY;
 exports.Multicall = Multicall;
 exports.NoTickDataProvider = NoTickDataProvider;
 exports.NonfungiblePositionManager = NonfungiblePositionManager;

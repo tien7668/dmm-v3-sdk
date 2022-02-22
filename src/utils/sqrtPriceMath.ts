@@ -1,5 +1,5 @@
 import { MaxUint256 } from '@vutien/sdk-core'
-import { FeeAmount } from '../constants'
+import { FeeAmount, MIN_LIQUIDITY } from '../constants'
 import JSBI from 'jsbi'
 import invariant from 'tiny-invariant'
 import { ONE, ZERO, Q96 } from '../internalConstants'
@@ -7,7 +7,7 @@ import { FullMath } from './fullMath'
 
 const MaxUint160 = JSBI.subtract(JSBI.exponentiate(JSBI.BigInt(2), JSBI.BigInt(160)), ONE)
 
-const MAX_FEE = JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(6))
+const MAX_FEE = JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(4))
 
 function multiplyIn256(x: JSBI, y: JSBI): JSBI {
   const product = JSBI.multiply(x, y)
@@ -25,6 +25,13 @@ export abstract class SqrtPriceMath {
    */
   private constructor() {}
 
+  public static getAmount0Unlock(sqrtRatioInitX96: JSBI) {
+    return FullMath.mulDivRoundingUp(JSBI.BigInt(MIN_LIQUIDITY), Q96, sqrtRatioInitX96)
+  }
+
+  public static getAmount1Unlock(sqrtRatioInitX96: JSBI) {
+    return FullMath.mulDivRoundingUp(JSBI.BigInt(MIN_LIQUIDITY), sqrtRatioInitX96, Q96)
+  }
   //L value = encodeSqrt = X96
   //Come from equation
   // (x + L/sqrt(Pb)).(y + L.sqrt(Pa)) = L^2
