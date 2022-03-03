@@ -1,6 +1,6 @@
 {
   "name": "@vutien/dmm-v3-sdk",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "repository": "git@github.com:tien7668/dmm-v3-sdk.git",
   "author": "tien7668 <tien7668@gmail.com>",
   "license": "MIT",
@@ -22,7 +22,7 @@
     "@ethersproject/abi": "^5.0.12",
     "@ethersproject/solidity": "^5.0.9",
     "@uniswap/v3-periphery": "^1.3.0",
-    "@vutien/sdk-core": "^0.0.9",
+    "@vutien/sdk-core": "^0.0.10",
     "tiny-invariant": "^1.1.0",
     "tiny-warning": "^1.0.3"
   },
