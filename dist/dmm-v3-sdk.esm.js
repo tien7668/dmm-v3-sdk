@@ -79,6 +79,21 @@ function _extends() {
   return _extends.apply(this, arguments);
 }
 
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+
+  return target;
+}
+
 function _unsupportedIterableToArray(o, minLen) {
   if (!o) return;
   if (typeof o === "string") return _arrayLikeToArray(o, minLen);
@@ -4123,6 +4138,8 @@ var Payments = /*#__PURE__*/function () {
 }();
 Payments.INTERFACE = /*#__PURE__*/new Interface(abi$2);
 
+var _excluded = ["expectedCurrencyOwed0", "expectedCurrencyOwed1"];
+
 function isMint(options) {
   return Object.keys(options).some(function (k) {
     return k === 'recipient';
@@ -4310,20 +4327,26 @@ var NonfungiblePositionManager = /*#__PURE__*/function () {
     var recipient = validateAndParseAddress(options.recipient);
     var deadline = toHex(options.deadline); //remove a small amount to update the RTokens
 
-    calldatas.push(NonfungiblePositionManager.INTERFACE.encodeFunctionData('removeLiquidity', [{
-      tokenId: tokenId,
-      liquidity: '0x1',
-      amount0Min: 0,
-      amount1Min: 0,
-      deadline: deadline
-    }])); // collect
+    if (!options.isRemovingLiquid) {
+      calldatas.push(NonfungiblePositionManager.INTERFACE.encodeFunctionData('removeLiquidity', [{
+        tokenId: tokenId,
+        liquidity: '0x1',
+        amount0Min: 0,
+        amount1Min: 0,
+        deadline: deadline
+      }]));
+    }
 
-    calldatas.push(NonfungiblePositionManager.INTERFACE.encodeFunctionData('burnRTokens', [{
-      tokenId: tokenId,
-      amount0Min: 0,
-      amount1Min: 0,
-      deadline: deadline
-    }]));
+    if (options.havingFee) {
+      // collect
+      calldatas.push(NonfungiblePositionManager.INTERFACE.encodeFunctionData('burnRTokens', [{
+        tokenId: tokenId,
+        amount0Min: 0,
+        amount1Min: 0,
+        deadline: deadline
+      }]));
+    }
+
     var token0IsNative = options.expectedCurrencyOwed0.currency.isNative;
     var token1IsNative = options.expectedCurrencyOwed1.currency.isNative;
     var token0Amount = options.expectedCurrencyOwed0.quotient;
@@ -4403,20 +4426,19 @@ var NonfungiblePositionManager = /*#__PURE__*/function () {
       amount0Min: toHex(amount0Min),
       amount1Min: toHex(amount1Min),
       deadline: deadline
-    }])); // const { expectedCurrencyOwed0, expectedCurrencyOwed1, ...rest } = options.collectOptions
-    // calldatas.push(
-    //   ...NonfungiblePositionManager.encodeCollect({
-    //     tokenId: toHex(options.tokenId),
-    //     // add the underlying value to the expected currency already owed
-    //     expectedCurrencyOwed0: expectedCurrencyOwed0.add(
-    //       CurrencyAmount.fromRawAmount(expectedCurrencyOwed0.currency, amount0Min)
-    //     ),
-    //     expectedCurrencyOwed1: expectedCurrencyOwed1.add(
-    //       CurrencyAmount.fromRawAmount(expectedCurrencyOwed1.currency, amount1Min)
-    //     ),
-    //     ...rest
-    //   })
-    // )
+    }]));
+
+    var _options$collectOptio = options.collectOptions,
+        expectedCurrencyOwed0 = _options$collectOptio.expectedCurrencyOwed0,
+        expectedCurrencyOwed1 = _options$collectOptio.expectedCurrencyOwed1,
+        rest = _objectWithoutPropertiesLoose(_options$collectOptio, _excluded);
+
+    calldatas.push.apply(calldatas, NonfungiblePositionManager.encodeCollect(_extends({
+      tokenId: toHex(options.tokenId),
+      // add the underlying value to the expected currency already owed
+      expectedCurrencyOwed0: expectedCurrencyOwed0.add(CurrencyAmount.fromRawAmount(expectedCurrencyOwed0.currency, amount0Min)),
+      expectedCurrencyOwed1: expectedCurrencyOwed1.add(CurrencyAmount.fromRawAmount(expectedCurrencyOwed1.currency, amount1Min))
+    }, rest)));
 
     if (options.liquidityPercentage.equalTo(ONE)) {
       if (options.burnToken) {

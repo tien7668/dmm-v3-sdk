@@ -125,6 +125,10 @@ export interface CollectOptions {
   recipient: string
 
   deadline: BigintIsh
+
+  isRemovingLiquid?: boolean
+
+  havingFee?: boolean
 }
 
 export interface NFTPermitOptions {
@@ -171,7 +175,7 @@ export interface RemoveLiquidityOptions {
   /**
    * Parameters to be passed on to collect
    */
-  // collectOptions: Omit<CollectOptions, 'tokenId'>
+  collectOptions: Omit<CollectOptions, 'tokenId'>
 }
 
 export abstract class NonfungiblePositionManager {
@@ -381,29 +385,33 @@ export abstract class NonfungiblePositionManager {
     const deadline = toHex(options.deadline)
 
     //remove a small amount to update the RTokens
-    calldatas.push(
-      NonfungiblePositionManager.INTERFACE.encodeFunctionData('removeLiquidity', [
-        {
-          tokenId,
-          liquidity: '0x1',
-          amount0Min: 0,
-          amount1Min: 0,
-          deadline
-        }
-      ])
-    )
+    if (!options.isRemovingLiquid) {
+      calldatas.push(
+        NonfungiblePositionManager.INTERFACE.encodeFunctionData('removeLiquidity', [
+          {
+            tokenId,
+            liquidity: '0x1',
+            amount0Min: 0,
+            amount1Min: 0,
+            deadline
+          }
+        ])
+      )
+    }
 
-    // collect
-    calldatas.push(
-      NonfungiblePositionManager.INTERFACE.encodeFunctionData('burnRTokens', [
-        {
-          tokenId,
-          amount0Min: 0,
-          amount1Min: 0,
-          deadline
-        }
-      ])
-    )
+    if (options.havingFee) {
+      // collect
+      calldatas.push(
+        NonfungiblePositionManager.INTERFACE.encodeFunctionData('burnRTokens', [
+          {
+            tokenId,
+            amount0Min: 0,
+            amount1Min: 0,
+            deadline
+          }
+        ])
+      )
+    }
 
     const token0IsNative = options.expectedCurrencyOwed0.currency.isNative
     const token1IsNative = options.expectedCurrencyOwed1.currency.isNative
@@ -501,20 +509,20 @@ export abstract class NonfungiblePositionManager {
       ])
     )
 
-    // const { expectedCurrencyOwed0, expectedCurrencyOwed1, ...rest } = options.collectOptions
-    // calldatas.push(
-    //   ...NonfungiblePositionManager.encodeCollect({
-    //     tokenId: toHex(options.tokenId),
-    //     // add the underlying value to the expected currency already owed
-    //     expectedCurrencyOwed0: expectedCurrencyOwed0.add(
-    //       CurrencyAmount.fromRawAmount(expectedCurrencyOwed0.currency, amount0Min)
-    //     ),
-    //     expectedCurrencyOwed1: expectedCurrencyOwed1.add(
-    //       CurrencyAmount.fromRawAmount(expectedCurrencyOwed1.currency, amount1Min)
-    //     ),
-    //     ...rest
-    //   })
-    // )
+    const { expectedCurrencyOwed0, expectedCurrencyOwed1, ...rest } = options.collectOptions
+    calldatas.push(
+      ...NonfungiblePositionManager.encodeCollect({
+        tokenId: toHex(options.tokenId),
+        // add the underlying value to the expected currency already owed
+        expectedCurrencyOwed0: expectedCurrencyOwed0.add(
+          CurrencyAmount.fromRawAmount(expectedCurrencyOwed0.currency, amount0Min)
+        ),
+        expectedCurrencyOwed1: expectedCurrencyOwed1.add(
+          CurrencyAmount.fromRawAmount(expectedCurrencyOwed1.currency, amount1Min)
+        ),
+        ...rest
+      })
+    )
 
     if (options.liquidityPercentage.equalTo(ONE)) {
       if (options.burnToken) {

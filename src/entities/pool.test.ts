@@ -184,6 +184,7 @@ describe('Pool', () => {
           liquidityGross: ONE_ETHER
         }
       ])
+      // pool = new Pool(USDC, DAI, FeeAmount.LOW, encodeSqrtRatioX96(1, 1), ONE_ETHER, 0, [])
     })
     //token 0 = DAI => zeroForOne=false
     //outputAmount = swap( zeroForOne, inputAmount.quotient, sqrtPriceLimitX96 )
