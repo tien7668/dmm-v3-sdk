@@ -130,4 +130,29 @@ export abstract class TickList {
       return [nextInitializedTick, nextInitializedTick === index]
     }
   }
+
+  public static nextInitializedTickWithinFixedDistance(
+    ticks: readonly Tick[],
+    tick: number,
+    lte: boolean,
+    distance: number = 480 
+  ): [number, boolean] {
+    if (lte) {
+      const minimum = tick - distance
+      if (TickList.isBelowSmallest(ticks, tick)) {
+        return [minimum, false]
+      }
+      const index = TickList.nextInitializedTick(ticks, tick, lte).index
+      const nextInitializedTick = Math.max(minimum, index)
+      return [nextInitializedTick, nextInitializedTick === index]
+    } else {
+      const maximum = tick + distance
+      if (this.isAtOrAboveLargest(ticks, tick)) {
+        return [maximum, false]
+      }
+      const index = this.nextInitializedTick(ticks, tick, lte).index
+      const nextInitializedTick = Math.min(maximum, index)
+      return [nextInitializedTick, nextInitializedTick === index]
+    } 
+  }
 }
