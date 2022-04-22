@@ -20,4 +20,5 @@ export declare abstract class TickList {
     private static binarySearch;
     static nextInitializedTick(ticks: readonly Tick[], tick: number, lte: boolean): Tick;
     static nextInitializedTickWithinOneWord(ticks: readonly Tick[], tick: number, lte: boolean, tickSpacing: number): [number, boolean];
+    static nextInitializedTickWithinFixedDistance(ticks: readonly Tick[], tick: number, lte: boolean, distance?: number): [number, boolean];
 }

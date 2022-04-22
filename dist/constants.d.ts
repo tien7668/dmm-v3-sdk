@@ -6,7 +6,7 @@ export declare const POOL_INIT_CODE_HASH = "0xd71790a46dff0e075392efbd706356cd5a
  */
 export declare enum FeeAmount {
     LOWEST = 1,
-    LOW = 5,
+    LOW = 4,
     MEDIUM = 30,
     HIGH = 100
 }

@@ -214,7 +214,7 @@ export abstract class SwapMath {
     }else{
       let tmp = FullMath.mulDiv(absAmount, Q96, sqrtRatioCurrentX96)
       if (exactIn) {
-        return FullMath.mulDivRoundingUp(JSBI.add(liquidity, tmp), sqrtRatioCurrentX96, JSBI.add(liquidity, deltaL)) 
+        return FullMath.mulDiv(JSBI.add(liquidity, tmp), sqrtRatioCurrentX96, JSBI.add(liquidity, deltaL)) 
       }else {
         return FullMath.mulDivRoundingUp(JSBI.subtract(liquidity, tmp), sqrtRatioCurrentX96, JSBI.add(liquidity, deltaL)) 
       }
