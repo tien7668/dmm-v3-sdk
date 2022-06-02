@@ -904,17 +904,18 @@ var POOL_INIT_CODE_HASH = '0xd71790a46dff0e075392efbd706356cd5a822a782f46e985982
 var FeeAmount;
 
 (function (FeeAmount) {
-  FeeAmount[FeeAmount["LOWEST"] = 1] = "LOWEST";
-  FeeAmount[FeeAmount["LOW"] = 4] = "LOW";
-  FeeAmount[FeeAmount["MEDIUM"] = 30] = "MEDIUM";
-  FeeAmount[FeeAmount["HIGH"] = 100] = "HIGH";
+  FeeAmount[FeeAmount["STABLE"] = 8] = "STABLE";
+  FeeAmount[FeeAmount["LOWEST"] = 10] = "LOWEST";
+  FeeAmount[FeeAmount["LOW"] = 40] = "LOW";
+  FeeAmount[FeeAmount["MEDIUM"] = 300] = "MEDIUM";
+  FeeAmount[FeeAmount["HIGH"] = 1000] = "HIGH";
 })(FeeAmount || (FeeAmount = {}));
 /**
  * The default factory tick spacings by fee amount.
  */
 
 
-var TICK_SPACINGS = (_TICK_SPACINGS = {}, _TICK_SPACINGS[FeeAmount.LOWEST] = 1, _TICK_SPACINGS[FeeAmount.LOW] = 8, _TICK_SPACINGS[FeeAmount.MEDIUM] = 60, _TICK_SPACINGS[FeeAmount.HIGH] = 200, _TICK_SPACINGS);
+var TICK_SPACINGS = (_TICK_SPACINGS = {}, _TICK_SPACINGS[FeeAmount.STABLE] = 1, _TICK_SPACINGS[FeeAmount.LOWEST] = 1, _TICK_SPACINGS[FeeAmount.LOW] = 8, _TICK_SPACINGS[FeeAmount.MEDIUM] = 60, _TICK_SPACINGS[FeeAmount.HIGH] = 200, _TICK_SPACINGS);
 var MIN_LIQUIDITY = 100000;
 
 /**
@@ -2129,7 +2130,7 @@ var Pool = /*#__PURE__*/function () {
       ticks = NO_TICK_DATA_PROVIDER_DEFAULT;
     }
 
-    !(Number.isInteger(fee) && fee < 10000) ? process.env.NODE_ENV !== "production" ? invariant(false, 'FEE') : invariant(false) : void 0;
+    !(Number.isInteger(fee) && fee < 100000) ? process.env.NODE_ENV !== "production" ? invariant(false, 'FEE') : invariant(false) : void 0;
     var tickCurrentSqrtRatioX96 = TickMath.getSqrtRatioAtTick(tickCurrent);
     var nextTickSqrtRatioX96 = TickMath.getSqrtRatioAtTick(tickCurrent + 1);
     !(JSBI.greaterThanOrEqual(JSBI.BigInt(sqrtRatioX96), tickCurrentSqrtRatioX96) && JSBI.lessThanOrEqual(JSBI.BigInt(sqrtRatioX96), nextTickSqrtRatioX96)) ? process.env.NODE_ENV !== "production" ? invariant(false, 'PRICE_BOUNDS') : invariant(false) : void 0;
