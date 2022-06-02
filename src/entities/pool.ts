@@ -76,7 +76,7 @@ export class Pool {
     tickCurrent: number,
     ticks: TickDataProvider | (Tick | TickConstructorArgs)[] = NO_TICK_DATA_PROVIDER_DEFAULT
   ) {
-    invariant(Number.isInteger(fee) && fee < 10000, 'FEE')
+    invariant(Number.isInteger(fee) && fee < 100000, 'FEE')
 
     const tickCurrentSqrtRatioX96 = TickMath.getSqrtRatioAtTick(tickCurrent)
     const nextTickSqrtRatioX96 = TickMath.getSqrtRatioAtTick(tickCurrent + 1)
