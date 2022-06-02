@@ -12,6 +12,7 @@ export declare class Pool {
     readonly fee: FeeAmount;
     readonly sqrtRatioX96: JSBI;
     readonly liquidity: JSBI;
+    readonly reinvestLiquidity: JSBI;
     readonly tickCurrent: number;
     readonly tickDataProvider: TickDataProvider;
     private _token0Price?;
@@ -27,7 +28,7 @@ export declare class Pool {
      * @param tickCurrent The current tick of the pool
      * @param ticks The current state of the pool ticks or a data provider that can return tick data
      */
-    constructor(tokenA: Token, tokenB: Token, fee: FeeAmount, sqrtRatioX96: BigintIsh, liquidity: BigintIsh, tickCurrent: number, ticks?: TickDataProvider | (Tick | TickConstructorArgs)[]);
+    constructor(tokenA: Token, tokenB: Token, fee: FeeAmount, sqrtRatioX96: BigintIsh, liquidity: BigintIsh, reinvestLiquidity: BigintIsh, tickCurrent: number, ticks?: TickDataProvider | (Tick | TickConstructorArgs)[]);
     /**
      * Returns true if the token is either token0 or token1
      * @param token The token to check
@@ -59,6 +60,7 @@ export declare class Pool {
      * @returns The output amount and the pool with updated state
      */
     getOutputAmount(inputAmount: CurrencyAmount<Token>, sqrtPriceLimitX96?: JSBI): Promise<[CurrencyAmount<Token>, Pool]>;
+    getOutputAmountProMM(inputAmount: CurrencyAmount<Token>, sqrtPriceLimitX96?: JSBI): Promise<[CurrencyAmount<Token>, Pool]>;
     /**
      * Given a desired output amount of a token, return the computed input amount and a pool with state updated after the trade
      * @param outputAmount the output amount for which to quote the input amount
@@ -66,6 +68,7 @@ export declare class Pool {
      * @returns The input amount and the pool with updated state
      */
     getInputAmount(outputAmount: CurrencyAmount<Token>, sqrtPriceLimitX96?: JSBI): Promise<[CurrencyAmount<Token>, Pool]>;
+    private swapProMM;
     /**
      * Executes a swap
      * @param zeroForOne Whether the amount in is token0 or token1

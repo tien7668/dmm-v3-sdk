@@ -162,6 +162,7 @@ export class Position {
       this.pool.fee,
       sqrtRatioX96Lower,
       0 /* liquidity doesn't matter */,
+      this.pool.reinvestLiquidity,
       TickMath.getTickAtSqrtRatio(sqrtRatioX96Lower)
     )
     const poolUpper = new Pool(
@@ -170,6 +171,7 @@ export class Position {
       this.pool.fee,
       sqrtRatioX96Upper,
       0 /* liquidity doesn't matter */,
+      this.pool.reinvestLiquidity,
       TickMath.getTickAtSqrtRatio(sqrtRatioX96Upper)
     )
 
@@ -217,6 +219,7 @@ export class Position {
       this.pool.fee,
       sqrtRatioX96Lower,
       0 /* liquidity doesn't matter */,
+      this.pool.reinvestLiquidity,
       TickMath.getTickAtSqrtRatio(sqrtRatioX96Lower)
     )
     const poolUpper = new Pool(
@@ -225,6 +228,7 @@ export class Position {
       this.pool.fee,
       sqrtRatioX96Upper,
       0 /* liquidity doesn't matter */,
+      this.pool.reinvestLiquidity,
       TickMath.getTickAtSqrtRatio(sqrtRatioX96Upper)
     )
 

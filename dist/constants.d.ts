@@ -5,10 +5,11 @@ export declare const POOL_INIT_CODE_HASH = "0xd71790a46dff0e075392efbd706356cd5a
  * The default factory enabled fee amounts, denominated in hundredths of bips.
  */
 export declare enum FeeAmount {
-    LOWEST = 1,
-    LOW = 5,
-    MEDIUM = 30,
-    HIGH = 100
+    STABLE = 8,
+    LOWEST = 10,
+    LOW = 40,
+    MEDIUM = 300,
+    HIGH = 1000
 }
 /**
  * The default factory tick spacings by fee amount.

@@ -905,17 +905,18 @@ var ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 var POOL_INIT_CODE_HASH = '0xd71790a46dff0e075392efbd706356cd5a822a782f46e9859829440065879f81';
 
 (function (FeeAmount) {
-  FeeAmount[FeeAmount["LOWEST"] = 1] = "LOWEST";
-  FeeAmount[FeeAmount["LOW"] = 5] = "LOW";
-  FeeAmount[FeeAmount["MEDIUM"] = 30] = "MEDIUM";
-  FeeAmount[FeeAmount["HIGH"] = 100] = "HIGH";
+  FeeAmount[FeeAmount["STABLE"] = 8] = "STABLE";
+  FeeAmount[FeeAmount["LOWEST"] = 10] = "LOWEST";
+  FeeAmount[FeeAmount["LOW"] = 40] = "LOW";
+  FeeAmount[FeeAmount["MEDIUM"] = 300] = "MEDIUM";
+  FeeAmount[FeeAmount["HIGH"] = 1000] = "HIGH";
 })(exports.FeeAmount || (exports.FeeAmount = {}));
 /**
  * The default factory tick spacings by fee amount.
  */
 
 
-var TICK_SPACINGS = (_TICK_SPACINGS = {}, _TICK_SPACINGS[exports.FeeAmount.LOWEST] = 1, _TICK_SPACINGS[exports.FeeAmount.LOW] = 10, _TICK_SPACINGS[exports.FeeAmount.MEDIUM] = 60, _TICK_SPACINGS[exports.FeeAmount.HIGH] = 200, _TICK_SPACINGS);
+var TICK_SPACINGS = (_TICK_SPACINGS = {}, _TICK_SPACINGS[exports.FeeAmount.STABLE] = 1, _TICK_SPACINGS[exports.FeeAmount.LOWEST] = 1, _TICK_SPACINGS[exports.FeeAmount.LOW] = 8, _TICK_SPACINGS[exports.FeeAmount.MEDIUM] = 60, _TICK_SPACINGS[exports.FeeAmount.HIGH] = 200, _TICK_SPACINGS);
 var MIN_LIQUIDITY = 100000;
 
 /**
@@ -996,6 +997,29 @@ var NoTickDataProvider = /*#__PURE__*/function () {
     }
 
     return nextInitializedTickWithinOneWord;
+  }();
+
+  _proto.nextInitializedTickWithinFixedDistance = /*#__PURE__*/function () {
+    var _nextInitializedTickWithinFixedDistance = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(_tick, _lte, _distance) {
+      return runtime_1.wrap(function _callee3$(_context3) {
+        while (1) {
+          switch (_context3.prev = _context3.next) {
+            case 0:
+              throw new Error(NoTickDataProvider.ERROR_MESSAGE);
+
+            case 1:
+            case "end":
+              return _context3.stop();
+          }
+        }
+      }, _callee3);
+    }));
+
+    function nextInitializedTickWithinFixedDistance(_x5, _x6, _x7) {
+      return _nextInitializedTickWithinFixedDistance.apply(this, arguments);
+    }
+
+    return nextInitializedTickWithinFixedDistance;
   }();
 
   return NoTickDataProvider;
@@ -1275,6 +1299,36 @@ var TickList = /*#__PURE__*/function () {
     }
   };
 
+  TickList.nextInitializedTickWithinFixedDistance = function nextInitializedTickWithinFixedDistance(ticks, tick, lte, distance) {
+    if (distance === void 0) {
+      distance = 480;
+    }
+
+    if (lte) {
+      var minimum = tick - distance;
+
+      if (TickList.isBelowSmallest(ticks, tick)) {
+        return [minimum, false];
+      }
+
+      var index = TickList.nextInitializedTick(ticks, tick, lte).index;
+      var nextInitializedTick = Math.max(minimum, index);
+      return [nextInitializedTick, nextInitializedTick === index];
+    } else {
+      var maximum = tick + distance;
+
+      if (this.isAtOrAboveLargest(ticks, tick)) {
+        return [maximum, false];
+      }
+
+      var _index3 = this.nextInitializedTick(ticks, tick, lte).index;
+
+      var _nextInitializedTick2 = Math.min(maximum, _index3);
+
+      return [_nextInitializedTick2, _nextInitializedTick2 === _index3];
+    }
+  };
+
   return TickList;
 }();
 
@@ -1359,6 +1413,20 @@ var FullMath = /*#__PURE__*/function () {
     var result = JSBI.divide(product, denominator);
     if (JSBI.notEqual(JSBI.remainder(product, denominator), ZERO)) result = JSBI.add(result, ONE);
     return result;
+  };
+
+  FullMath.mulDiv = function mulDiv(a, b, denominator) {
+    var product = JSBI.multiply(a, b);
+    return JSBI.divide(product, denominator);
+  };
+
+  FullMath.getSmallerRootOfQuadEqn = function getSmallerRootOfQuadEqn(a, b, c) {
+    // smallerRoot = (b - sqrt(b * b - a * c)) / a;
+    var tmp1 = JSBI.multiply(b, b);
+    var tmp2 = JSBI.multiply(a, c);
+    var tmp3 = sdkCore.sqrt(JSBI.subtract(tmp1, tmp2));
+    var tmp4 = JSBI.subtract(b, tmp3);
+    return JSBI.divide(tmp4, a);
   };
 
   return FullMath;
@@ -1765,15 +1833,207 @@ var TickListDataProvider = /*#__PURE__*/function () {
     return nextInitializedTickWithinOneWord;
   }();
 
+  _proto.nextInitializedTickWithinFixedDistance = /*#__PURE__*/function () {
+    var _nextInitializedTickWithinFixedDistance = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(tick, lte, distance) {
+      return runtime_1.wrap(function _callee3$(_context3) {
+        while (1) {
+          switch (_context3.prev = _context3.next) {
+            case 0:
+              return _context3.abrupt("return", TickList.nextInitializedTickWithinFixedDistance(this.ticks, tick, lte, distance));
+
+            case 1:
+            case "end":
+              return _context3.stop();
+          }
+        }
+      }, _callee3, this);
+    }));
+
+    function nextInitializedTickWithinFixedDistance(_x5, _x6, _x7) {
+      return _nextInitializedTickWithinFixedDistance.apply(this, arguments);
+    }
+
+    return nextInitializedTickWithinFixedDistance;
+  }();
+
   return TickListDataProvider;
 }();
 
-var MAX_FEE$1 = /*#__PURE__*/JSBI.exponentiate( /*#__PURE__*/JSBI.BigInt(10), /*#__PURE__*/JSBI.BigInt(4));
+var BPS = /*#__PURE__*/JSBI.exponentiate( /*#__PURE__*/JSBI.BigInt(10), /*#__PURE__*/JSBI.BigInt(4));
+var TWO_BPS = /*#__PURE__*/JSBI.multiply(BPS, /*#__PURE__*/JSBI.BigInt(2));
 var SwapMath = /*#__PURE__*/function () {
   /**
    * Cannot be constructed.
    */
   function SwapMath() {}
+
+  SwapMath.computeSwapStepPromm = function computeSwapStepPromm(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, amountRemaining, feePips, exactIn, zeroForOne) {
+    var returnValues = {
+      sqrtRatioNextX96: ZERO,
+      amountIn: ZERO,
+      amountOut: ZERO,
+      deltaL: ZERO
+    };
+    if (JSBI.equal(sqrtRatioCurrentX96, sqrtRatioTargetX96)) return [sqrtRatioCurrentX96, ZERO, ZERO, ZERO];
+    var usedAmount = SwapMath.calcReachAmount(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, feePips, exactIn, zeroForOne);
+    console.log("======usedAmount of tick 480,", usedAmount.toString());
+
+    if (exactIn && JSBI.greaterThanOrEqual(usedAmount, amountRemaining) || !exactIn && JSBI.lessThanOrEqual(usedAmount, amountRemaining)) {
+      usedAmount = amountRemaining;
+    } else {
+      returnValues.sqrtRatioNextX96 = sqrtRatioTargetX96;
+    }
+
+    returnValues.amountIn = usedAmount;
+    var absUsedAmount = JSBI.greaterThanOrEqual(usedAmount, ZERO) ? usedAmount : JSBI.multiply(usedAmount, JSBI.BigInt(-1));
+
+    if (JSBI.equal(returnValues.sqrtRatioNextX96, ZERO)) {
+      //last step 
+      returnValues.deltaL = SwapMath.estimateIncrementalLiquidity(absUsedAmount, liquidity, sqrtRatioCurrentX96, feePips, exactIn, zeroForOne);
+      returnValues.sqrtRatioNextX96 = SwapMath.calcFinalPrice(absUsedAmount, liquidity, returnValues.deltaL, sqrtRatioCurrentX96, exactIn, zeroForOne);
+    } else {
+      returnValues.deltaL = SwapMath.calcIncrementalLiquidity(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, absUsedAmount, exactIn, zeroForOne);
+    }
+
+    returnValues.amountOut = SwapMath.calcReturnedAmount(sqrtRatioCurrentX96, returnValues.sqrtRatioNextX96, liquidity, returnValues.deltaL, exactIn, zeroForOne);
+    return [returnValues.sqrtRatioNextX96, returnValues.amountIn, returnValues.amountOut, returnValues.deltaL];
+  };
+
+  SwapMath.calcReachAmount = function calcReachAmount(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, feePips, exactIn, zeroForOne) {
+    var absPriceDiff = sqrtRatioCurrentX96 >= sqrtRatioTargetX96 ? JSBI.subtract(sqrtRatioCurrentX96, sqrtRatioTargetX96) : JSBI.subtract(sqrtRatioTargetX96, sqrtRatioCurrentX96);
+    var reachAmount;
+
+    if (exactIn) {
+      if (zeroForOne) {
+        //exactInput + swap 0 -> 1
+        var denominator = JSBI.subtract(JSBI.multiply(TWO_BPS, sqrtRatioTargetX96), JSBI.multiply(JSBI.BigInt(feePips), sqrtRatioCurrentX96));
+        var numerator = FullMath.mulDiv(liquidity, JSBI.multiply(TWO_BPS, absPriceDiff), denominator);
+        reachAmount = FullMath.mulDiv(numerator, Q96, sqrtRatioCurrentX96);
+      } else {
+        //exactInput + swap 1 -> 0
+        var _denominator = JSBI.subtract(JSBI.multiply(TWO_BPS, sqrtRatioCurrentX96), JSBI.multiply(JSBI.BigInt(feePips), sqrtRatioTargetX96));
+
+        var _numerator = FullMath.mulDiv(liquidity, JSBI.multiply(TWO_BPS, absPriceDiff), _denominator);
+
+        reachAmount = FullMath.mulDiv(_numerator, sqrtRatioCurrentX96, Q96);
+      }
+    } else {
+      if (zeroForOne) {
+        //exactOut + swap 0 -> 1
+        var _denominator2 = JSBI.subtract(JSBI.multiply(TWO_BPS, sqrtRatioCurrentX96), JSBI.multiply(JSBI.BigInt(feePips), sqrtRatioTargetX96));
+
+        var _numerator2 = JSBI.subtract(_denominator2, JSBI.multiply(JSBI.BigInt(feePips), sqrtRatioCurrentX96));
+
+        _numerator2 = FullMath.mulDiv(JSBI.leftShift(liquidity, JSBI.BigInt(96)), _numerator2, _denominator2);
+        reachAmount = JSBI.divide(FullMath.mulDiv(_numerator2, absPriceDiff, sqrtRatioCurrentX96), sqrtRatioTargetX96);
+        reachAmount = JSBI.multiply(reachAmount, JSBI.BigInt(-1));
+      } else {
+        var _denominator3 = JSBI.subtract(JSBI.multiply(TWO_BPS, sqrtRatioTargetX96), JSBI.multiply(JSBI.BigInt(feePips), sqrtRatioCurrentX96));
+
+        var _numerator3 = JSBI.subtract(_denominator3, JSBI.multiply(JSBI.BigInt(feePips), sqrtRatioTargetX96));
+
+        _numerator3 = FullMath.mulDiv(liquidity, _numerator3, _denominator3);
+        reachAmount = FullMath.mulDiv(_numerator3, absPriceDiff, Q96);
+        reachAmount = JSBI.multiply(reachAmount, JSBI.BigInt(-1));
+      }
+    }
+
+    return reachAmount;
+  };
+
+  SwapMath.calcReturnedAmount = function calcReturnedAmount(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, deltaL, exactIn, zeroForOne) {
+    var returnedAmount;
+
+    if (zeroForOne) {
+      if (exactIn) {
+        returnedAmount = JSBI.add(FullMath.mulDivRoundingUp(deltaL, sqrtRatioTargetX96, Q96), JSBI.multiply(FullMath.mulDiv(liquidity, JSBI.subtract(sqrtRatioCurrentX96, sqrtRatioTargetX96), Q96), JSBI.BigInt(-1)));
+      } else {
+        returnedAmount = JSBI.add(FullMath.mulDivRoundingUp(deltaL, sqrtRatioTargetX96, Q96), FullMath.mulDivRoundingUp(liquidity, JSBI.subtract(sqrtRatioTargetX96, sqrtRatioCurrentX96), Q96));
+      }
+    } else {
+      returnedAmount = JSBI.add(FullMath.mulDivRoundingUp(JSBI.add(liquidity, deltaL), Q96, sqrtRatioTargetX96), JSBI.multiply(FullMath.mulDivRoundingUp(liquidity, Q96, sqrtRatioCurrentX96), JSBI.BigInt(-1)));
+    }
+
+    if (exactIn && JSBI.equal(returnedAmount, JSBI.BigInt(1))) {
+      returnedAmount = ZERO;
+    }
+
+    return returnedAmount;
+  };
+
+  SwapMath.calcIncrementalLiquidity = function calcIncrementalLiquidity(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, absAmount, exactIn, zeroForOne) {
+    // this is when we reach the target, then we have target_X96
+    if (zeroForOne) {
+      var tmp1 = FullMath.mulDiv(liquidity, Q96, sqrtRatioCurrentX96);
+      var tmp2 = exactIn ? JSBI.add(tmp1, absAmount) : JSBI.subtract(tmp1, absAmount);
+      var tmp3 = FullMath.mulDiv(sqrtRatioTargetX96, tmp2, Q96);
+      return JSBI.greaterThan(tmp3, liquidity) ? JSBI.subtract(tmp3, liquidity) : ZERO;
+    } else {
+      var _tmp = FullMath.mulDiv(liquidity, sqrtRatioCurrentX96, Q96);
+
+      var _tmp2 = exactIn ? JSBI.add(_tmp, absAmount) : JSBI.subtract(_tmp, absAmount);
+
+      var _tmp3 = FullMath.mulDiv(_tmp2, Q96, sqrtRatioTargetX96);
+
+      return JSBI.greaterThan(_tmp3, liquidity) ? JSBI.subtract(_tmp3, liquidity) : ZERO;
+    }
+  };
+
+  SwapMath.estimateIncrementalLiquidity = function estimateIncrementalLiquidity(absAmount, liquidity, sqrtRatioCurrentX96, feePips, exactIn, zeroForOne) {
+    // this is when we didn't reach the target (last step before loop end), then we have to recalculate the target_X96, deltaL ...
+    var deltaL;
+    var fee = JSBI.BigInt(feePips);
+
+    if (exactIn) {
+      if (zeroForOne) {
+        // deltaL = feeInBps * absDelta * currentSqrtP / 2
+        deltaL = FullMath.mulDiv(sqrtRatioCurrentX96, JSBI.multiply(absAmount, fee), JSBI.leftShift(TWO_BPS, JSBI.BigInt(96)));
+      } else {
+        // deltaL = feeInBps * absDelta * / (currentSqrtP * 2)
+        // Because nextSqrtP = (liquidity + absDelta / currentSqrtP) * currentSqrtP / (liquidity + deltaL)
+        // so we round up deltaL, to round down nextSqrtP
+        deltaL = FullMath.mulDivRoundingUp(Q96, JSBI.multiply(absAmount, fee), JSBI.multiply(TWO_BPS, sqrtRatioCurrentX96));
+      }
+    } else {
+      // obtain the smaller root of the quadratic equation
+      // ax^2 - 2bx + c = 0 such that b > 0, and x denotes deltaL
+      var a = fee;
+      var b = JSBI.subtract(BPS, fee);
+      var c = JSBI.multiply(JSBI.multiply(fee, liquidity), absAmount);
+
+      if (zeroForOne) {
+        b = JSBI.subtract(b, FullMath.mulDiv(JSBI.multiply(BPS, absAmount), sqrtRatioCurrentX96, Q96));
+        c = FullMath.mulDiv(c, sqrtRatioCurrentX96, Q96);
+      } else {
+        b = JSBI.subtract(b, FullMath.mulDiv(JSBI.multiply(BPS, absAmount), Q96, sqrtRatioCurrentX96));
+        c = FullMath.mulDiv(c, Q96, sqrtRatioCurrentX96);
+      }
+
+      deltaL = FullMath.getSmallerRootOfQuadEqn(a, b, c);
+    }
+
+    return deltaL;
+  };
+
+  SwapMath.calcFinalPrice = function calcFinalPrice(absAmount, liquidity, deltaL, sqrtRatioCurrentX96, exactIn, zeroForOne) {
+    if (zeroForOne) {
+      var tmp = FullMath.mulDiv(absAmount, sqrtRatioCurrentX96, Q96);
+
+      if (exactIn) {
+        return FullMath.mulDivRoundingUp(JSBI.add(liquidity, deltaL), sqrtRatioCurrentX96, JSBI.add(liquidity, tmp));
+      } else {
+        return FullMath.mulDiv(JSBI.add(liquidity, deltaL), sqrtRatioCurrentX96, JSBI.subtract(liquidity, tmp));
+      }
+    } else {
+      var _tmp4 = FullMath.mulDiv(absAmount, Q96, sqrtRatioCurrentX96);
+
+      if (exactIn) {
+        return FullMath.mulDiv(JSBI.add(liquidity, _tmp4), sqrtRatioCurrentX96, JSBI.add(liquidity, deltaL));
+      } else {
+        return FullMath.mulDivRoundingUp(JSBI.subtract(liquidity, _tmp4), sqrtRatioCurrentX96, JSBI.add(liquidity, deltaL));
+      }
+    }
+  };
 
   SwapMath.computeSwapStep = function computeSwapStep(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, amountRemaining, feePips) {
     var returnValues = {}; //sqrtRatioCurrentX96 > sqrtRatioTargetX96 means direction = Pb -> Pa <=> add zero, remove one <=> zeroForOne true
@@ -1783,7 +2043,7 @@ var SwapMath = /*#__PURE__*/function () {
 
     if (exactIn) {
       //reduce fee
-      var amountRemainingLessFee = JSBI.divide(JSBI.multiply(amountRemaining, JSBI.subtract(MAX_FEE$1, JSBI.BigInt(feePips))), MAX_FEE$1); // calculate amount in between 2 ticks
+      var amountRemainingLessFee = JSBI.divide(JSBI.multiply(amountRemaining, JSBI.subtract(BPS, JSBI.BigInt(feePips))), BPS); // calculate amount in between 2 ticks
       // if zeroForOne -> calc the input amount of token0 -> getAmount0Delta,
       //               -> sqrtRatioCurrentX96 > sqrtRatioTargetX96 -> Pa = sqrtRatioTargetX96
       //                                                              Pb = sqrtRatioCurrentX96
@@ -1837,7 +2097,7 @@ var SwapMath = /*#__PURE__*/function () {
       // we didn't reach the target, so take the remainder of the maximum input as fee
       returnValues.feeAmount = JSBI.subtract(amountRemaining, returnValues.amountIn);
     } else {
-      returnValues.feeAmount = FullMath.mulDivRoundingUp(returnValues.amountIn, JSBI.BigInt(feePips), JSBI.subtract(MAX_FEE$1, JSBI.BigInt(feePips)));
+      returnValues.feeAmount = FullMath.mulDivRoundingUp(returnValues.amountIn, JSBI.BigInt(feePips), JSBI.subtract(BPS, JSBI.BigInt(feePips)));
     }
 
     return [returnValues.sqrtRatioNextX96, returnValues.amountIn, returnValues.amountOut, returnValues.feeAmount];
@@ -1866,12 +2126,12 @@ var Pool = /*#__PURE__*/function () {
    * @param tickCurrent The current tick of the pool
    * @param ticks The current state of the pool ticks or a data provider that can return tick data
    */
-  function Pool(tokenA, tokenB, fee, sqrtRatioX96, liquidity, tickCurrent, ticks) {
+  function Pool(tokenA, tokenB, fee, sqrtRatioX96, liquidity, reinvestLiquidity, tickCurrent, ticks) {
     if (ticks === void 0) {
       ticks = NO_TICK_DATA_PROVIDER_DEFAULT;
     }
 
-    !(Number.isInteger(fee) && fee < 10000) ?  invariant(false, 'FEE')  : void 0;
+    !(Number.isInteger(fee) && fee < 100000) ?  invariant(false, 'FEE')  : void 0;
     var tickCurrentSqrtRatioX96 = TickMath.getSqrtRatioAtTick(tickCurrent);
     var nextTickSqrtRatioX96 = TickMath.getSqrtRatioAtTick(tickCurrent + 1);
     !(JSBI.greaterThanOrEqual(JSBI.BigInt(sqrtRatioX96), tickCurrentSqrtRatioX96) && JSBI.lessThanOrEqual(JSBI.BigInt(sqrtRatioX96), nextTickSqrtRatioX96)) ?  invariant(false, 'PRICE_BOUNDS')  : void 0;
@@ -1883,6 +2143,7 @@ var Pool = /*#__PURE__*/function () {
     this.fee = fee;
     this.sqrtRatioX96 = JSBI.BigInt(sqrtRatioX96);
     this.liquidity = JSBI.BigInt(liquidity);
+    this.reinvestLiquidity = JSBI.BigInt(reinvestLiquidity);
     this.tickCurrent = tickCurrent;
     this.tickDataProvider = Array.isArray(ticks) ? new TickListDataProvider(ticks, TICK_SPACINGS[fee]) : ticks;
   }
@@ -1955,7 +2216,7 @@ var Pool = /*#__PURE__*/function () {
               liquidity = _yield$this$swap.liquidity;
               tickCurrent = _yield$this$swap.tickCurrent;
               outputToken = zeroForOne ? this.token1 : this.token0;
-              return _context.abrupt("return", [sdkCore.CurrencyAmount.fromRawAmount(outputToken, JSBI.multiply(outputAmount, NEGATIVE_ONE)), new Pool(this.token0, this.token1, this.fee, sqrtRatioX96, liquidity, tickCurrent, this.tickDataProvider)]);
+              return _context.abrupt("return", [sdkCore.CurrencyAmount.fromRawAmount(outputToken, JSBI.multiply(outputAmount, NEGATIVE_ONE)), new Pool(this.token0, this.token1, this.fee, sqrtRatioX96, liquidity, 0, tickCurrent, this.tickDataProvider)]);
 
             case 11:
             case "end":
@@ -1970,6 +2231,44 @@ var Pool = /*#__PURE__*/function () {
     }
 
     return getOutputAmount;
+  }();
+
+  _proto.getOutputAmountProMM = /*#__PURE__*/function () {
+    var _getOutputAmountProMM = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee2(inputAmount, sqrtPriceLimitX96) {
+      var zeroForOne, _yield$this$swapProMM, outputAmount, sqrtRatioX96, baseL, reinvestL, tickCurrent, outputToken;
+
+      return runtime_1.wrap(function _callee2$(_context2) {
+        while (1) {
+          switch (_context2.prev = _context2.next) {
+            case 0:
+              !this.involvesToken(inputAmount.currency) ?  invariant(false, 'TOKEN')  : void 0;
+              zeroForOne = inputAmount.currency.equals(this.token0);
+              _context2.next = 4;
+              return this.swapProMM(zeroForOne, inputAmount.quotient, sqrtPriceLimitX96);
+
+            case 4:
+              _yield$this$swapProMM = _context2.sent;
+              outputAmount = _yield$this$swapProMM.amountCalculated;
+              sqrtRatioX96 = _yield$this$swapProMM.sqrtRatioX96;
+              baseL = _yield$this$swapProMM.baseL;
+              reinvestL = _yield$this$swapProMM.reinvestL;
+              tickCurrent = _yield$this$swapProMM.tickCurrent;
+              outputToken = zeroForOne ? this.token1 : this.token0;
+              return _context2.abrupt("return", [sdkCore.CurrencyAmount.fromRawAmount(outputToken, JSBI.multiply(outputAmount, NEGATIVE_ONE)), new Pool(this.token0, this.token1, this.fee, sqrtRatioX96, baseL, reinvestL, tickCurrent, this.tickDataProvider)]);
+
+            case 12:
+            case "end":
+              return _context2.stop();
+          }
+        }
+      }, _callee2, this);
+    }));
+
+    function getOutputAmountProMM(_x3, _x4) {
+      return _getOutputAmountProMM.apply(this, arguments);
+    }
+
+    return getOutputAmountProMM;
   }()
   /**
    * Given a desired output amount of a token, return the computed input amount and a pool with state updated after the trade
@@ -1982,40 +2281,184 @@ var Pool = /*#__PURE__*/function () {
   _proto.getInputAmount =
   /*#__PURE__*/
   function () {
-    var _getInputAmount = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee2(outputAmount, sqrtPriceLimitX96) {
+    var _getInputAmount = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(outputAmount, sqrtPriceLimitX96) {
       var zeroForOne, _yield$this$swap2, inputAmount, sqrtRatioX96, liquidity, tickCurrent, inputToken;
 
-      return runtime_1.wrap(function _callee2$(_context2) {
+      return runtime_1.wrap(function _callee3$(_context3) {
         while (1) {
-          switch (_context2.prev = _context2.next) {
+          switch (_context3.prev = _context3.next) {
             case 0:
               !(outputAmount.currency.isToken && this.involvesToken(outputAmount.currency)) ?  invariant(false, 'TOKEN')  : void 0;
               zeroForOne = outputAmount.currency.equals(this.token1);
-              _context2.next = 4;
+              _context3.next = 4;
               return this.swap(zeroForOne, JSBI.multiply(outputAmount.quotient, NEGATIVE_ONE), sqrtPriceLimitX96);
 
             case 4:
-              _yield$this$swap2 = _context2.sent;
+              _yield$this$swap2 = _context3.sent;
               inputAmount = _yield$this$swap2.amountCalculated;
               sqrtRatioX96 = _yield$this$swap2.sqrtRatioX96;
               liquidity = _yield$this$swap2.liquidity;
               tickCurrent = _yield$this$swap2.tickCurrent;
               inputToken = zeroForOne ? this.token0 : this.token1;
-              return _context2.abrupt("return", [sdkCore.CurrencyAmount.fromRawAmount(inputToken, inputAmount), new Pool(this.token0, this.token1, this.fee, sqrtRatioX96, liquidity, tickCurrent, this.tickDataProvider)]);
+              return _context3.abrupt("return", [sdkCore.CurrencyAmount.fromRawAmount(inputToken, inputAmount), new Pool(this.token0, this.token1, this.fee, sqrtRatioX96, liquidity, 0, tickCurrent, this.tickDataProvider)]);
 
             case 11:
             case "end":
-              return _context2.stop();
+              return _context3.stop();
           }
         }
-      }, _callee2, this);
+      }, _callee3, this);
     }));
 
-    function getInputAmount(_x3, _x4) {
+    function getInputAmount(_x5, _x6) {
       return _getInputAmount.apply(this, arguments);
     }
 
     return getInputAmount;
+  }() // isToken0 = zeroForOne
+  ;
+
+  _proto.swapProMM =
+  /*#__PURE__*/
+  function () {
+    var _swapProMM = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee4(zeroForOne, amountSpecified, sqrtPriceLimitX96) {
+      var exactInput, state, step, _yield$this$tickDataP, _SwapMath$computeSwap, liquidityNet;
+
+      return runtime_1.wrap(function _callee4$(_context4) {
+        while (1) {
+          switch (_context4.prev = _context4.next) {
+            case 0:
+              //zeroForOne . as long as swaping token 0->1, X96 of token 0 come to 0, then MIN_SQRT_RATIO is the limit
+              //!zeroForOne . as long as swaping token 0->1, X96 of token 0 come to infinity, then MAX_SQRT_RATIO is the limit
+              if (!sqrtPriceLimitX96) sqrtPriceLimitX96 = zeroForOne ? JSBI.add(TickMath.MIN_SQRT_RATIO, ONE) : JSBI.subtract(TickMath.MAX_SQRT_RATIO, ONE);
+
+              if (zeroForOne) {
+                !JSBI.greaterThan(sqrtPriceLimitX96, TickMath.MIN_SQRT_RATIO) ?  invariant(false, 'RATIO_MIN')  : void 0;
+                !JSBI.lessThan(sqrtPriceLimitX96, this.sqrtRatioX96) ?  invariant(false, 'RATIO_CURRENT')  : void 0;
+              } else {
+                !JSBI.lessThan(sqrtPriceLimitX96, TickMath.MAX_SQRT_RATIO) ?  invariant(false, 'RATIO_MAX')  : void 0;
+                !JSBI.greaterThan(sqrtPriceLimitX96, this.sqrtRatioX96) ?  invariant(false, 'RATIO_CURRENT')  : void 0;
+              }
+
+              exactInput = JSBI.greaterThanOrEqual(amountSpecified, ZERO);
+              state = {
+                amountSpecifiedRemaining: amountSpecified,
+                amountCalculated: ZERO,
+                baseL: this.liquidity,
+                reinvestL: this.reinvestLiquidity,
+                sqrtPriceX96: this.sqrtRatioX96,
+                tick: this.tickCurrent
+              };
+
+            case 4:
+              if (!(JSBI.notEqual(state.amountSpecifiedRemaining, ZERO) && state.sqrtPriceX96 != sqrtPriceLimitX96)) {
+                _context4.next = 41;
+                break;
+              }
+
+              console.log("===[s] 1.state", Object.fromEntries(Object.entries(state).map(function (_ref2) {
+                var k = _ref2[0],
+                    v = _ref2[1];
+                return [k, v.toString()];
+              })));
+              step = {};
+              step.sqrtPriceStartX96 = state.sqrtPriceX96;
+              _context4.next = 10;
+              return this.tickDataProvider.nextInitializedTickWithinFixedDistance(state.tick, zeroForOne, 480);
+
+            case 10:
+              _yield$this$tickDataP = _context4.sent;
+              step.tickNext = _yield$this$tickDataP[0];
+              step.initialized = _yield$this$tickDataP[1];
+
+              // console.log("===[s1] 1.step", Object.fromEntries(Object.entries(step).map(([k, v]) => [k, !!v ? v.toString() : v])))
+              if (step.tickNext < TickMath.MIN_TICK) {
+                step.tickNext = TickMath.MIN_TICK;
+              } else if (step.tickNext > TickMath.MAX_TICK) {
+                step.tickNext = TickMath.MAX_TICK;
+              }
+
+              step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
+              console.log("===[s] 2.step", Object.fromEntries(Object.entries(step).map(function (_ref3) {
+                var k = _ref3[0],
+                    v = _ref3[1];
+                return [k, !!v ? v.toString() : v];
+              })));
+              _SwapMath$computeSwap = SwapMath.computeSwapStepPromm(state.sqrtPriceX96, (zeroForOne ? JSBI.lessThan(step.sqrtPriceNextX96, sqrtPriceLimitX96) : JSBI.greaterThan(step.sqrtPriceNextX96, sqrtPriceLimitX96)) ? sqrtPriceLimitX96 : step.sqrtPriceNextX96, JSBI.add(state.baseL, state.reinvestL), state.amountSpecifiedRemaining, this.fee, exactInput, zeroForOne);
+              state.sqrtPriceX96 = _SwapMath$computeSwap[0];
+              step.amountIn = _SwapMath$computeSwap[1];
+              step.amountOut = _SwapMath$computeSwap[2];
+              step.deltaL = _SwapMath$computeSwap[3];
+              console.log("===[s] 3.step", Object.fromEntries(Object.entries(step).map(function (_ref4) {
+                var k = _ref4[0],
+                    v = _ref4[1];
+                return [k, !!v ? v.toString() : v];
+              })));
+              state.amountSpecifiedRemaining = JSBI.subtract(state.amountSpecifiedRemaining, step.amountIn);
+              state.amountCalculated = JSBI.add(state.amountCalculated, step.amountOut);
+              state.reinvestL = JSBI.add(state.reinvestL, step.deltaL);
+
+              if (!JSBI.equal(state.sqrtPriceX96, step.sqrtPriceNextX96)) {
+                _context4.next = 37;
+                break;
+              }
+
+              if (!step.initialized) {
+                _context4.next = 34;
+                break;
+              }
+
+              _context4.t0 = JSBI;
+              _context4.next = 30;
+              return this.tickDataProvider.getTick(step.tickNext);
+
+            case 30:
+              _context4.t1 = _context4.sent.liquidityNet;
+              liquidityNet = _context4.t0.BigInt.call(_context4.t0, _context4.t1);
+              // if we're moving leftward, we interpret liquidityNet as the opposite sign
+              // safe because liquidityNet cannot be type(int128).min
+              if (zeroForOne) liquidityNet = JSBI.multiply(liquidityNet, NEGATIVE_ONE);
+              state.baseL = LiquidityMath.addDelta(state.baseL, liquidityNet);
+
+            case 34:
+              state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;
+              _context4.next = 38;
+              break;
+
+            case 37:
+              state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPriceX96);
+
+            case 38:
+              console.log("===[s] 4.state", Object.fromEntries(Object.entries(state).map(function (_ref5) {
+                var k = _ref5[0],
+                    v = _ref5[1];
+                return [k, !!v ? v.toString() : v];
+              })));
+              _context4.next = 4;
+              break;
+
+            case 41:
+              return _context4.abrupt("return", {
+                amountCalculated: state.amountCalculated,
+                sqrtRatioX96: state.sqrtPriceX96,
+                baseL: state.baseL,
+                reinvestL: state.reinvestL,
+                tickCurrent: state.tick
+              });
+
+            case 42:
+            case "end":
+              return _context4.stop();
+          }
+        }
+      }, _callee4, this);
+    }));
+
+    function swapProMM(_x7, _x8, _x9) {
+      return _swapProMM.apply(this, arguments);
+    }
+
+    return swapProMM;
   }()
   /**
    * Executes a swap
@@ -2032,12 +2475,12 @@ var Pool = /*#__PURE__*/function () {
   _proto.swap =
   /*#__PURE__*/
   function () {
-    var _swap = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(zeroForOne, amountSpecified, sqrtPriceLimitX96) {
-      var exactInput, state, step, _yield$this$tickDataP, _SwapMath$computeSwap, liquidityNet;
+    var _swap = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee5(zeroForOne, amountSpecified, sqrtPriceLimitX96) {
+      var exactInput, state, step, _yield$this$tickDataP2, _SwapMath$computeSwap2, liquidityNet;
 
-      return runtime_1.wrap(function _callee3$(_context3) {
+      return runtime_1.wrap(function _callee5$(_context5) {
         while (1) {
-          switch (_context3.prev = _context3.next) {
+          switch (_context5.prev = _context5.next) {
             case 0:
               //zeroForOne . as long as swaping token 0->1, X96 of token 0 come to 0, then MIN_SQRT_RATIO is the limit
               //!zeroForOne . as long as swaping token 0->1, X96 of token 0 come to infinity, then MAX_SQRT_RATIO is the limit
@@ -2072,19 +2515,19 @@ var Pool = /*#__PURE__*/function () {
 
             case 4:
               if (!(JSBI.notEqual(state.amountSpecifiedRemaining, ZERO) && state.sqrtPriceX96 != sqrtPriceLimitX96)) {
-                _context3.next = 35;
+                _context5.next = 35;
                 break;
               }
 
               step = {};
               step.sqrtPriceStartX96 = state.sqrtPriceX96;
-              _context3.next = 9;
+              _context5.next = 9;
               return this.tickDataProvider.nextInitializedTickWithinOneWord(state.tick, zeroForOne, this.tickSpacing);
 
             case 9:
-              _yield$this$tickDataP = _context3.sent;
-              step.tickNext = _yield$this$tickDataP[0];
-              step.initialized = _yield$this$tickDataP[1];
+              _yield$this$tickDataP2 = _context5.sent;
+              step.tickNext = _yield$this$tickDataP2[0];
+              step.initialized = _yield$this$tickDataP2[1];
 
               if (step.tickNext < TickMath.MIN_TICK) {
                 step.tickNext = TickMath.MIN_TICK;
@@ -2093,11 +2536,11 @@ var Pool = /*#__PURE__*/function () {
               }
 
               step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
-              _SwapMath$computeSwap = SwapMath.computeSwapStep(state.sqrtPriceX96, (zeroForOne ? JSBI.lessThan(step.sqrtPriceNextX96, sqrtPriceLimitX96) : JSBI.greaterThan(step.sqrtPriceNextX96, sqrtPriceLimitX96)) ? sqrtPriceLimitX96 : step.sqrtPriceNextX96, state.liquidity, state.amountSpecifiedRemaining, this.fee);
-              state.sqrtPriceX96 = _SwapMath$computeSwap[0];
-              step.amountIn = _SwapMath$computeSwap[1];
-              step.amountOut = _SwapMath$computeSwap[2];
-              step.feeAmount = _SwapMath$computeSwap[3];
+              _SwapMath$computeSwap2 = SwapMath.computeSwapStep(state.sqrtPriceX96, (zeroForOne ? JSBI.lessThan(step.sqrtPriceNextX96, sqrtPriceLimitX96) : JSBI.greaterThan(step.sqrtPriceNextX96, sqrtPriceLimitX96)) ? sqrtPriceLimitX96 : step.sqrtPriceNextX96, state.liquidity, state.amountSpecifiedRemaining, this.fee);
+              state.sqrtPriceX96 = _SwapMath$computeSwap2[0];
+              step.amountIn = _SwapMath$computeSwap2[1];
+              step.amountOut = _SwapMath$computeSwap2[2];
+              step.feeAmount = _SwapMath$computeSwap2[3];
 
               if (exactInput) {
                 state.amountSpecifiedRemaining = JSBI.subtract(state.amountSpecifiedRemaining, JSBI.add(step.amountIn, step.feeAmount));
@@ -2109,22 +2552,22 @@ var Pool = /*#__PURE__*/function () {
 
 
               if (!JSBI.equal(state.sqrtPriceX96, step.sqrtPriceNextX96)) {
-                _context3.next = 32;
+                _context5.next = 32;
                 break;
               }
 
               if (!step.initialized) {
-                _context3.next = 29;
+                _context5.next = 29;
                 break;
               }
 
-              _context3.t0 = JSBI;
-              _context3.next = 25;
+              _context5.t0 = JSBI;
+              _context5.next = 25;
               return this.tickDataProvider.getTick(step.tickNext);
 
             case 25:
-              _context3.t1 = _context3.sent.liquidityNet;
-              liquidityNet = _context3.t0.BigInt.call(_context3.t0, _context3.t1);
+              _context5.t1 = _context5.sent.liquidityNet;
+              liquidityNet = _context5.t0.BigInt.call(_context5.t0, _context5.t1);
               // if we're moving leftward, we interpret liquidityNet as the opposite sign
               // safe because liquidityNet cannot be type(int128).min
               if (zeroForOne) liquidityNet = JSBI.multiply(liquidityNet, NEGATIVE_ONE);
@@ -2132,7 +2575,7 @@ var Pool = /*#__PURE__*/function () {
 
             case 29:
               state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;
-              _context3.next = 33;
+              _context5.next = 33;
               break;
 
             case 32:
@@ -2142,11 +2585,11 @@ var Pool = /*#__PURE__*/function () {
               }
 
             case 33:
-              _context3.next = 4;
+              _context5.next = 4;
               break;
 
             case 35:
-              return _context3.abrupt("return", {
+              return _context5.abrupt("return", {
                 amountCalculated: state.amountCalculated,
                 sqrtRatioX96: state.sqrtPriceX96,
                 liquidity: state.liquidity,
@@ -2155,13 +2598,13 @@ var Pool = /*#__PURE__*/function () {
 
             case 36:
             case "end":
-              return _context3.stop();
+              return _context5.stop();
           }
         }
-      }, _callee3, this);
+      }, _callee5, this);
     }));
 
-    function swap(_x5, _x6, _x7) {
+    function swap(_x10, _x11, _x12) {
       return _swap.apply(this, arguments);
     }
 
@@ -2275,10 +2718,10 @@ var Position = /*#__PURE__*/function () {
 
     var poolLower = new Pool(this.pool.token0, this.pool.token1, this.pool.fee, sqrtRatioX96Lower, 0
     /* liquidity doesn't matter */
-    , TickMath.getTickAtSqrtRatio(sqrtRatioX96Lower));
+    , this.pool.reinvestLiquidity, TickMath.getTickAtSqrtRatio(sqrtRatioX96Lower));
     var poolUpper = new Pool(this.pool.token0, this.pool.token1, this.pool.fee, sqrtRatioX96Upper, 0
     /* liquidity doesn't matter */
-    , TickMath.getTickAtSqrtRatio(sqrtRatioX96Upper)); // because the router is imprecise, we need to calculate the position that will be created (assuming no slippage)
+    , this.pool.reinvestLiquidity, TickMath.getTickAtSqrtRatio(sqrtRatioX96Upper)); // because the router is imprecise, we need to calculate the position that will be created (assuming no slippage)
 
     var positionThatWillBeCreated = Position.fromAmounts(_extends({
       pool: this.pool,
@@ -2324,10 +2767,10 @@ var Position = /*#__PURE__*/function () {
 
     var poolLower = new Pool(this.pool.token0, this.pool.token1, this.pool.fee, sqrtRatioX96Lower, 0
     /* liquidity doesn't matter */
-    , TickMath.getTickAtSqrtRatio(sqrtRatioX96Lower));
+    , this.pool.reinvestLiquidity, TickMath.getTickAtSqrtRatio(sqrtRatioX96Lower));
     var poolUpper = new Pool(this.pool.token0, this.pool.token1, this.pool.fee, sqrtRatioX96Upper, 0
     /* liquidity doesn't matter */
-    , TickMath.getTickAtSqrtRatio(sqrtRatioX96Upper)); // we want the smaller amounts...
+    , this.pool.reinvestLiquidity, TickMath.getTickAtSqrtRatio(sqrtRatioX96Upper)); // we want the smaller amounts...
     // ...which occurs at the upper price for amount0...
 
     var amount0 = new Position({

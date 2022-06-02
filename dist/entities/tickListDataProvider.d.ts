@@ -9,4 +9,5 @@ export declare class TickListDataProvider implements TickDataProvider {
         liquidityGross: BigintIsh;
     }>;
     nextInitializedTickWithinOneWord(tick: number, lte: boolean, tickSpacing: number): Promise<[number, boolean]>;
+    nextInitializedTickWithinFixedDistance(tick: number, lte: boolean, distance: number): Promise<[number, boolean]>;
 }

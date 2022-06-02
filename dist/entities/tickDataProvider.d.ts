@@ -17,6 +17,13 @@ export interface TickDataProvider {
      * @param tickSpacing The tick spacing of the pool
      */
     nextInitializedTickWithinOneWord(tick: number, lte: boolean, tickSpacing: number): Promise<[number, boolean]>;
+    /**
+     * Return the next tick that is initialized within a fixed distance
+     * @param tick The current tick
+     * @param lte Whether the next tick should be lte the current tick
+     * @param tickSpacing The tick spacing of the pool
+     */
+    nextInitializedTickWithinFixedDistance(tick: number, lte: boolean, distance: number): Promise<[number, boolean]>;
 }
 /**
  * This tick data provider does not know how to fetch any tick data. It throws whenever it is required. Useful if you
@@ -28,4 +35,5 @@ export declare class NoTickDataProvider implements TickDataProvider {
         liquidityNet: BigintIsh;
     }>;
     nextInitializedTickWithinOneWord(_tick: number, _lte: boolean, _tickSpacing: number): Promise<[number, boolean]>;
+    nextInitializedTickWithinFixedDistance(_tick: number, _lte: boolean, _distance: number): Promise<[number, boolean]>;
 }
